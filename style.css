@@ -20,16 +20,16 @@
     --purple: #3A4259;     /* Deep muted blue/grey */
     --purple-light: #6B7A99;
     --purple-glow: rgba(58, 66, 89, 0.15);
-    --rose: #E57373;
-    --rose-glow: rgba(229, 115, 115, 0.2);
-    --yellow: #F4C46B;
+    --rose: #DC2626;       /* Red 600 - Melhor contraste para erros e exclusões */
+    --rose-glow: rgba(220, 38, 38, 0.1);
+    --yellow: #F59E0B;     /* Amber 500 */
     
     /* Typography & Text */
     --font-heading: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;
     --font-body: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;
-    --text-main: #1F2937;
-    --text-muted: #8C94A1;
-    --text-dim: #D1D5DB;
+    --text-main: #1F2937;  /* Slate 800 */
+    --text-muted: #6B7280; /* Gray 500 - Passa no WCAG AA */
+    --text-dim: #9CA3AF;   /* Gray 400 */
     
     --toast-bg: #1F2937;
     --toast-text: #F8FAFC;
@@ -524,7 +524,7 @@ body {
 
 .badge-purple {
     background: #EEF2FF;
-    color: #6366F1;
+    color: #4F46E5; /* Indigo 600 - Melhor legibilidade */
 }
 
 .closing-stats {
