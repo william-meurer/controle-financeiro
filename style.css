@@ -25,9 +25,9 @@
     --rose-glow: rgba(220, 38, 38, 0.1);
     --yellow: #F59E0B;     /* Amber 500 */
     
-    /* Typography & Text — Inter (body) + Outfit (headings/KPIs) */
-    --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
-    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    /* Typography & Text — Helvetica */
+    --font-heading: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    --font-body: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     --text-main: #1F2937;  /* Slate 800 */
     --text-muted: #6B7280; /* Gray 500 — WCAG AA ✓ */
     --text-dim: #9CA3AF;   /* Gray 400 */
