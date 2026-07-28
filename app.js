@@ -118,8 +118,7 @@ function setupAuth() {
         loginBtn.addEventListener("click", async () => {
             try {
                 const provider = new firebase.auth.GoogleAuthProvider();
-                // Usando Redirect ao invés de Popup para não ser bloqueado pelo Safari/Celular
-                auth.signInWithRedirect(provider);
+                await auth.signInWithPopup(provider);
             } catch (error) {
                 loginError.textContent = "Erro ao fazer login. Tente novamente.";
                 loginError.classList.remove("hidden");
