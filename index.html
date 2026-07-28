@@ -12,9 +12,9 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=2.1">
+    <link rel="stylesheet" href="style.css?v=3.0">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#DFE8F2">
+    <meta name="theme-color" content="#F0F4F8">
 </head>
 <body>
     <div class="app-background">
@@ -25,10 +25,10 @@
     <!-- LOGIN SCREEN -->
     <div id="login-screen" class="login-overlay">
         <div class="login-card" style="padding: 2.5rem 2rem;">
-            <input type="email" id="email-input" placeholder="Seu E-mail" autocomplete="email" style="height: 56px; margin-bottom: 12px; width: 100%; border-radius: 12px; border: 1px solid var(--border-glass); padding: 0 1rem; background: var(--bg-body); color: var(--text-main); font-size: 1rem;">
-            <input type="password" id="password-input" placeholder="Sua Senha" autocomplete="current-password" style="height: 56px; margin-bottom: 16px; width: 100%; border-radius: 12px; border: 1px solid var(--border-glass); padding: 0 1rem; background: var(--bg-body); color: var(--text-main); font-size: 1rem;">
+            <input type="email" id="email-input" placeholder="Seu E-mail" autocomplete="email" style="height: 52px; margin-bottom: 12px;">
+            <input type="password" id="password-input" placeholder="Sua Senha" autocomplete="current-password" style="height: 52px; margin-bottom: 16px;">
             
-            <button id="login-btn" class="btn btn-primary w-full" style="height: 56px; font-size: 1.1rem; border-radius: 12px; font-weight: 600; letter-spacing: 0.05em;">ENTRAR</button>
+            <button id="login-btn" class="btn btn-primary w-full" style="height: 52px; font-size: 1rem; font-weight: 600; letter-spacing: 0.05em;">ENTRAR</button>
             <p id="login-error" class="text-rose hidden mt-4 text-sm text-center">Erro ao fazer login.</p>
         </div>
     </div>
@@ -82,9 +82,9 @@
 
             <div class="bento-grid">
             <!-- 1. KPI Overview (Span Full) -->
-            <div class="bento-item kpi-bento glass-card" style="gap: 1.5rem; background: transparent; border: none; box-shadow: none; padding: 0;">
+            <div class="bento-item kpi-bento glass-card" style="gap: 1.25rem; background: transparent; border: none; box-shadow: none; padding: 0;">
                 <div class="kpi-mini highlight-kpi" style="flex: 1;">
-                    <span class="kpi-label">Entradas <button id="add-income-btn" class="btn btn-outline" style="margin-left: 0.5rem; padding: 2px 8px; font-size: 0.7rem; border-radius: 6px; height: 24px; color: var(--text-main); border-color: var(--border-glass);">NOVO</button></span>
+                    <span class="kpi-label">Entradas <button id="add-income-btn" class="btn btn-outline" style="margin-left: 0.5rem; padding: 2px 8px; font-size: 0.7rem; border-radius: var(--radius-sm); height: 24px; color: var(--text-main); border-color: var(--border-glass);">NOVO</button></span>
                     <strong id="kpi-income" class="sensitive-data text-main">R$ ••••</strong>
                 </div>
                 
@@ -99,13 +99,34 @@
                 </div>
             </div>
 
-            <!-- Footer Spacing -->
-            <div style="height: 60px;"></div>
+            <!-- 2. ENTRADAS (antes era "Roadmap de Entradas") -->
+            <div class="bento-item table-bento glass-card section-entradas" style="background: var(--bg-card);">
+                <div class="section-header">
+                    <h2><i data-lucide="arrow-up-circle" class="text-teal"></i> Entradas</h2>
+                    <span class="section-subtitle" id="incomes-count">0</span>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="incomes-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">Status</th>
+                                <th>Descrição</th>
+                                <th>Data Prevista</th>
+                                <th>Valor</th>
+                                <th style="width: 80px; text-align: right;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
-            <!-- 2. Tables Area -->
-            <div class="bento-item table-bento glass-card" style="box-shadow: none !important; border: 1px solid var(--border-glass);">
+            <!-- 3. SAÍDAS (antes era "Fechamento Mensal") -->
+            <div class="bento-item table-bento glass-card section-saidas" style="box-shadow: none !important; border: 1px solid var(--border-glass);">
                 <div class="table-bento-header">
-                    <h2 style="display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="check-square"></i> Fechamento Mensal <span id="fechamento-month-label" style="font-weight: 400; font-size: 0.9em; opacity: 0.8;"></span></h2>
+                    <h2 style="display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="arrow-down-circle"></i> Saídas <span id="fechamento-month-label" style="font-weight: 400; font-size: 0.85em; opacity: 0.7;"></span></h2>
                     <div class="closing-stats">
                         <div class="stat-badge filter-badge">
                             <span>Ocultar Pagos</span>
@@ -175,30 +196,6 @@
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-
-            <!-- ROADMAP DE ENTRADAS (Movido para cá) -->
-            <div class="bento-item table-bento glass-card mt-4" style="background: var(--bg-card);">
-                <div class="section-header">
-                    <h2><i data-lucide="zap" class="text-purple"></i> Roadmap de Entradas</h2>
-                    <span class="section-subtitle" id="incomes-count" style="margin-left: auto;">0</span>
-                </div>
-                <div class="table-container">
-                    <table class="data-table" id="incomes-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 50px;">Status</th>
-                                <th>Descrição</th>
-                                <th>Data Prevista</th>
-                                <th>Valor</th>
-                                <th style="width: 80px; text-align: right;">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Preenchido via JS -->
-                        </tbody>
-                    </table>
                 </div>
             </div>
 

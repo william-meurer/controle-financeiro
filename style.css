@@ -4,15 +4,16 @@
 
 :root {
     /* Color Palette - Light & Clean Theme */
-    --bg-dark: #DFE8F2; /* Soft periwinkle/blue background */
-    --bg-slate: #F3F6F9;
+    --bg-dark: #F0F4F8;    /* Cinza neutro suave — padrão fintech premium */
+    --bg-slate: #F7F9FC;
     --bg-card: #FFFFFF;
     --bg-card-hover: #FAFBFC;
-    --border-glass: rgba(0, 0, 0, 0.04);
+    --bg-body: #FFFFFF;
+    --border-glass: rgba(0, 0, 0, 0.06); /* Mais definição sem ser pesado */
     --input-bg: #F9FAFB;
     --input-border: #E5E7EB;
     
-    /* Accents from image */
+    /* Accents */
     --teal: #195843;       /* Dark Forest Green */
     --teal-glow: rgba(25, 88, 67, 0.15);
     --emerald: #BCE29E;    /* Soft Light Green */
@@ -20,16 +21,29 @@
     --purple: #3A4259;     /* Deep muted blue/grey */
     --purple-light: #6B7A99;
     --purple-glow: rgba(58, 66, 89, 0.15);
-    --rose: #DC2626;       /* Red 600 - Melhor contraste para erros e exclusões */
+    --rose: #DC2626;       /* Red 600 — WCAG AA ✓ */
     --rose-glow: rgba(220, 38, 38, 0.1);
     --yellow: #F59E0B;     /* Amber 500 */
     
-    /* Typography & Text */
-    --font-heading: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;
-    --font-body: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, sans-serif;
+    /* Typography & Text — Inter (body) + Outfit (headings/KPIs) */
+    --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
     --text-main: #1F2937;  /* Slate 800 */
-    --text-muted: #6B7280; /* Gray 500 - Passa no WCAG AA */
+    --text-muted: #6B7280; /* Gray 500 — WCAG AA ✓ */
     --text-dim: #9CA3AF;   /* Gray 400 */
+    
+    /* Spacing Scale */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    
+    /* Radius Scale */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 16px;
+    --radius-xl: 20px;
     
     --toast-bg: #1F2937;
     --toast-text: #F8FAFC;
@@ -170,7 +184,7 @@ body {
 .glass-card {
     background: var(--bg-card);
     border: 1px solid var(--border-glass);
-    border-radius: 20px;
+    border-radius: var(--radius-lg);
 }
 
 /* Container */
@@ -183,7 +197,7 @@ body {
 
 .main-content {
     flex: 1;
-    padding: 2rem;
+    padding: var(--space-xl) 2.5rem;
     padding-bottom: 0;
     margin-left: 0;
     overflow-y: auto;
@@ -194,16 +208,43 @@ body {
     to { opacity: 1; transform: translateY(0); }
 }
 
-    background: transparent;
-    color: rgba(255,255,255,0.8);
-    justify-content: flex-start;
-    padding: 0.7rem 1rem;
-    border-radius: 12px;
+/* Section Headers (Entradas / Saídas) */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-lg);
+    padding-bottom: var(--space-lg);
+    border-bottom: 1px solid var(--border-glass);
 }
 
-.sidebar-left .btn-text:hover {
-    background: rgba(255,255,255,0.1);
-    color: #fff;
+.section-header h2 {
+    font-family: var(--font-heading);
+    font-size: 1.15rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: var(--text-main);
+    margin: 0;
+}
+
+.section-subtitle {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--bg-slate);
+    padding: 0.3rem 0.75rem;
+    border-radius: var(--radius-sm);
+}
+
+/* Section visual indicators */
+.section-entradas {
+    border-left: 3px solid var(--teal);
+}
+
+.section-saidas {
+    border-left: 3px solid var(--purple);
 }
 
 .brand {
@@ -270,12 +311,12 @@ body {
 .btn {
     display: inline-flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-sm);
     padding: 0.7rem 1.2rem;
-    border-radius: 14px;
+    border-radius: var(--radius-md);
     font-family: var(--font-body);
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     cursor: pointer;
     border: none;
     transition: all 0.2s ease;
@@ -284,8 +325,8 @@ body {
 
 .btn-small {
     padding: 0.45rem 0.8rem;
-    font-size: 0.8rem;
-    border-radius: 10px;
+    font-size: 0.78rem;
+    border-radius: var(--radius-sm);
 }
 
 .btn-primary {
@@ -345,7 +386,7 @@ body {
     background: transparent;
     border: none;
     color: var(--text-muted);
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -365,7 +406,7 @@ body {
 
 /* Header Icon Buttons */
 .header-icon-btn {
-    width: 48px; height: 48px; border-radius: 12px; padding: 0; 
+    width: 44px; height: 44px; border-radius: var(--radius-md); padding: 0; 
     display: flex; align-items: center; justify-content: center; 
     background: rgba(255, 255, 255, 0.4); 
     backdrop-filter: blur(12px); 
@@ -409,7 +450,7 @@ body {
     display: grid;
     grid-template-columns: repeat(12, 1fr);
     grid-template-rows: auto auto;
-    gap: 1.5rem;
+    gap: 1.25rem;
 }
 
 .bento-item {
@@ -435,12 +476,12 @@ body {
 }
 
 .highlight-kpi {
-    background: #F9FAFB;
+    background: var(--bg-slate);
     color: var(--text-main);
-    padding: 1.5rem 2rem;
-    border-radius: 18px;
+    padding: 1.25rem 1.5rem;
+    border-radius: var(--radius-lg);
     transform: scale(1.02);
-    border: 1px solid #F3F4F6;
+    border: 1px solid var(--border-glass);
 }
 
 .highlight-kpi .kpi-label {
@@ -457,19 +498,20 @@ body {
 }
 
 .kpi-label {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
     display: flex;
     align-items: center;
     gap: 0.4rem;
     font-weight: 500;
+    letter-spacing: 0.02em;
 }
 
 .kpi-mini strong {
     font-family: var(--font-heading);
-    font-size: 2rem;
-    font-weight: 500;
+    font-size: 1.75rem;
+    font-weight: 600;
     letter-spacing: -0.02em;
 }
 
@@ -482,36 +524,38 @@ body {
 /* 2. Table Bento */
 .table-bento {
     grid-column: span 12;
-    padding: 2rem;
+    padding: 1.75rem 2rem;
 }
 
 .table-bento-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.25rem;
     border-bottom: 1px solid var(--border-glass);
-    padding-bottom: 1.5rem;
+    padding-bottom: 1.25rem;
 }
 
 .table-bento-header h2 {
     font-family: var(--font-heading);
-    font-size: 1.25rem;
-    font-weight: 500;
+    font-size: 1.15rem;
+    font-weight: 600;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--space-sm);
+    margin: 0;
 }
 
 .table-header h3 {
-    font-size: 1rem;
-    font-weight: 500;
+    font-size: 0.95rem;
+    font-weight: 600;
     color: var(--text-main);
+    font-family: var(--font-heading);
 }
 
 .badge {
     padding: 0.2rem 0.6rem;
-    border-radius: 6px;
+    border-radius: var(--radius-sm);
     font-size: 0.7rem;
     font-weight: 500;
     text-transform: uppercase;
@@ -555,11 +599,11 @@ body {
 .filter-badge {
     flex-direction: row;
     align-items: center;
-    gap: 0.5rem;
-    background: #F9FAFB;
-    padding: 0.5rem 0.75rem;
-    border-radius: 10px;
-    border: 1px solid #F3F4F6;
+    gap: var(--space-sm);
+    background: var(--bg-slate);
+    padding: var(--space-sm) 0.75rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-glass);
 }
 
 .switch {
@@ -605,17 +649,18 @@ input:checked + .slider:before { transform: translateX(16px); }
 .data-table tr:last-child { border-bottom: none; }
 
 .data-table th {
-    padding: 1rem 0.5rem;
-    font-size: 0.75rem;
+    padding: 0.875rem 0.75rem;
+    font-size: 0.7rem;
     text-transform: uppercase;
     color: var(--text-muted);
-    font-weight: 500;
-    letter-spacing: 0.02em;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    font-family: var(--font-body);
 }
 
 .data-table td {
-    padding: 1rem 0.5rem;
-    font-size: 0.9rem;
+    padding: 0.875rem 0.75rem;
+    font-size: 0.875rem;
     vertical-align: middle;
     color: var(--text-main);
 }
@@ -715,9 +760,7 @@ input:checked + .slider:before { transform: translateX(16px); }
     font-weight: 600;
 }
 
-/* OLD SIDEBAR REMOVED */
-    background: #FAFBFC;
-}
+/* (Cleaned: old sidebar orphan removed) */
 
 .backup-card h4 {
     font-size: 0.95rem;
@@ -823,7 +866,7 @@ input:checked + .slider:before { transform: translateX(16px); }
     width: 100%;
     max-width: 500px;
     background: var(--bg-card);
-    border-radius: 20px;
+    border-radius: var(--radius-xl);
     display: flex;
     flex-direction: column;
 }
@@ -838,7 +881,7 @@ input:checked + .slider:before { transform: translateX(16px); }
     align-items: center;
 }
 
-.modal-header h3 { font-size: 1.1rem; font-weight: 500; }
+.modal-header h3 { font-size: 1.05rem; font-weight: 600; font-family: var(--font-heading); }
 
 .modal-body { padding: 1.5rem; overflow-y: auto; }
 
@@ -855,15 +898,15 @@ input:checked + .slider:before { transform: translateX(16px); }
 .form-row { display: flex; gap: 1rem; }
 .form-row .form-group { flex: 1; }
 
-input[type="text"], input[type="password"], input[type="number"], input[type="month"], select {
+input[type="text"], input[type="password"], input[type="number"], input[type="month"], input[type="date"], input[type="email"], select {
     width: 100%;
     padding: 0.75rem 1rem;
     background: var(--input-bg);
     border: 1px solid var(--input-border);
-    border-radius: 12px;
+    border-radius: var(--radius-md);
     color: var(--text-main);
     font-family: var(--font-body);
-    font-size: 0.9rem;
+    font-size: 0.875rem;
     outline: none;
     transition: all 0.2s;
 }
