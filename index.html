@@ -122,19 +122,19 @@
 
             <!-- 3. SAÍDAS (antes era "Fechamento Mensal") -->
             <div class="bento-item table-bento glass-card section-saidas" style="box-shadow: none !important; border: 1px solid var(--border-glass);">
-                <div class="section-header" style="margin-bottom: 1.25rem;">
-                    <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+                <div class="section-header">
+                    <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
                         <h2><i data-lucide="arrow-down-circle"></i> Saídas</h2>
-                        <span class="section-subtitle" id="closing-paid-count" style="margin-left: auto;">0 / 0</span>
-                    </div>
-                </div>
-                <div style="display: flex; justify-content: flex-end; margin-top: -3.5rem; margin-bottom: 1.5rem; position: relative; z-index: 10;">
-                    <div class="stat-badge filter-badge" style="background: transparent; border: none; padding: 0;">
-                        <span>Ocultar Pagos</span>
-                        <label class="switch">
-                            <input type="checkbox" id="hide-paid-toggle" onchange="toggleHidePaid()">
-                            <span class="slider"></span>
-                        </label>
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-left: auto;">
+                            <span class="section-subtitle" id="closing-paid-count">0 / 0</span>
+                            <div class="stat-badge filter-badge" style="background: transparent; border: none; padding: 0;">
+                                <span>Ocultar Pagos</span>
+                                <label class="switch">
+                                    <input type="checkbox" id="hide-paid-toggle" onchange="toggleHidePaid()">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
