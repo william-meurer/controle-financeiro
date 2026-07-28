@@ -387,8 +387,9 @@ body {
 }
 
 #privacy-toggle-btn.active {
-    color: #fff;
-    background: rgba(255, 255, 255, 0.25);
+    color: var(--purple);
+    background: var(--purple-glow);
+    border-color: rgba(58, 66, 89, 0.3);
 }
 
 [data-theme="dark"] #privacy-toggle-btn.active {
