@@ -176,12 +176,38 @@ async function loadStateFromStorage() {
         const doc = await docRef.get();
         if (doc.exists) {
             appState.data = doc.data();
+            
+            // Auto-migração caso o Firestore esteja vazio mas o usuário tenha dados antigos no PC
+            let hasAnyTx = false;
+            for (let m in appState.data.months) {
+                if (appState.data.months[m].transactions.length > 0) hasAnyTx = true;
+            }
+            if (!hasAnyTx) {
+                const local = localStorage.getItem("antigravity_finance_pro_data");
+                if (local) {
+                    const parsed = JSON.parse(local);
+                    let localHasAnyTx = false;
+                    for (let m in parsed.months) {
+                        if (parsed.months[m].transactions && parsed.months[m].transactions.length > 0) localHasAnyTx = true;
+                    }
+                    if (localHasAnyTx) {
+                        appState.data = parsed;
+                        await saveStateToStorage();
+                    }
+                }
+            }
+
             if (!appState.data.months[appState.currentMonthKey]) {
                 const keys = Object.keys(appState.data.months).sort();
                 appState.currentMonthKey = keys[keys.length - 1] || "2026-07";
             }
         } else {
-            appState.data = JSON.parse(JSON.stringify(DEFAULT_INITIAL_DATA));
+            const local = localStorage.getItem("antigravity_finance_pro_data");
+            if (local) {
+                appState.data = JSON.parse(local);
+            } else {
+                appState.data = JSON.parse(JSON.stringify(DEFAULT_INITIAL_DATA));
+            }
             await saveStateToStorage();
         }
         renderApp();
