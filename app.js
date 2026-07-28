@@ -15,6 +15,18 @@ const DEFAULT_INITIAL_DATA = {
     }
 };
 
+const firebaseConfig = {
+  apiKey: "AIzaSyCr5aLy8OTt_GaBD6eRRi3eXQ43ZcvpI0E",
+  authDomain: "controle-financeiro-1cb16.firebaseapp.com",
+  projectId: "controle-financeiro-1cb16",
+  storageBucket: "controle-financeiro-1cb16.firebasestorage.app",
+  messagingSenderId: "130133712189",
+  appId: "1:130133712189:web:6501b96e321c9893df7954"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const auth = firebase.auth();
+
 let appState = {
     currentMonthKey: "2026-07",
     data: null,
@@ -24,13 +36,10 @@ let appState = {
 };
 let itemToDeleteId = null;
 
-const getSecretPin = () => localStorage.getItem("antigravity_finance_pro_pin") || "1234";
-
 document.addEventListener("DOMContentLoaded", () => {
     initIcons();
     setupAuth();
     initTheme();
-    loadStateFromStorage();
     setupEventListeners();
     
     const icon = document.getElementById("privacy-icon");
@@ -102,54 +111,75 @@ function initIcons() {
 // 1. AUTHENTICATION & LOGIN
 function setupAuth() {
     const loginBtn = document.getElementById("login-btn");
-    const pinInput = document.getElementById("pin-input");
-    const errorMsg = document.getElementById("login-error");
+    const loginError = document.getElementById("login-error");
+    const logoutBtn = document.getElementById("logout-btn");
 
-    const tryLogin = () => {
-        if (pinInput.value === getSecretPin()) {
+    if(loginBtn) {
+        loginBtn.addEventListener("click", async () => {
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                await auth.signInWithPopup(provider);
+            } catch (error) {
+                loginError.textContent = "Erro ao fazer login. Tente novamente.";
+                loginError.classList.remove("hidden");
+                console.error(error);
+            }
+        });
+    }
+
+    if(logoutBtn) {
+        logoutBtn.addEventListener("click", () => {
+            auth.signOut();
+            document.getElementById("tools-popover").classList.add("hidden");
+        });
+    }
+
+    auth.onAuthStateChanged(user => {
+        if (user) {
             appState.isAuthenticated = true;
             document.getElementById("login-screen").classList.add("hidden");
             document.getElementById("main-app").classList.remove("hidden");
-            renderApp();
+            loadStateFromStorage(); // Agora busca do firestore
         } else {
-            errorMsg.classList.remove("hidden");
-            pinInput.value = "";
+            appState.isAuthenticated = false;
+            appState.data = null;
+            document.getElementById("login-screen").classList.remove("hidden");
+            document.getElementById("main-app").classList.add("hidden");
         }
-    };
-
-    loginBtn.addEventListener("click", tryLogin);
-    pinInput.addEventListener("keyup", (e) => {
-        if (e.key === "Enter") tryLogin();
     });
 }
 
-// 2. STORAGE
-function loadStateFromStorage() {
-    const saved = localStorage.getItem("antigravity_finance_pro_data");
-    if (saved) {
-        try {
-            appState.data = JSON.parse(saved);
-            
-            // Remover mês de agosto conforme solicitado
-            if (appState.data.months["2026-08"]) {
-                delete appState.data.months["2026-08"];
-            }
-
+// 2. STORAGE (Firestore)
+async function loadStateFromStorage() {
+    if (!auth.currentUser) return;
+    try {
+        const docRef = db.collection('users').doc(auth.currentUser.uid);
+        const doc = await docRef.get();
+        if (doc.exists) {
+            appState.data = doc.data();
             if (!appState.data.months[appState.currentMonthKey]) {
                 const keys = Object.keys(appState.data.months).sort();
                 appState.currentMonthKey = keys[keys.length - 1] || "2026-07";
             }
-        } catch (e) {
+        } else {
             appState.data = JSON.parse(JSON.stringify(DEFAULT_INITIAL_DATA));
+            await saveStateToStorage();
         }
-    } else {
-        appState.data = JSON.parse(JSON.stringify(DEFAULT_INITIAL_DATA));
-        saveStateToStorage();
+        renderApp();
+    } catch (e) {
+        console.error("Erro ao carregar dados", e);
+        showToast("Erro ao carregar do banco de dados.", "error");
     }
 }
 
-function saveStateToStorage() {
-    localStorage.setItem("antigravity_finance_pro_data", JSON.stringify(appState.data));
+async function saveStateToStorage() {
+    if (!auth.currentUser || !appState.data) return;
+    try {
+        await db.collection('users').doc(auth.currentUser.uid).set(appState.data);
+    } catch (e) {
+        console.error("Erro ao salvar dados", e);
+        showToast("Sem permissão para salvar.", "error");
+    }
 }
 
 // 3. EVENT LISTENERS
@@ -192,7 +222,6 @@ function setupEventListeners() {
     document.getElementById("transaction-form").addEventListener("submit", handleTransactionSubmit);
     document.getElementById("delete-tx-btn").addEventListener("click", handleDeleteTransaction);
     document.getElementById("income-form").addEventListener("submit", handleIncomeSubmit);
-    document.getElementById("change-pin-form").addEventListener("submit", handleChangePinSubmit);
     document.getElementById("notes-form").addEventListener("submit", handleNotesSubmit);
     document.getElementById("confirm-close-month-btn").addEventListener("click", executeMonthlyClosing);
     
@@ -511,31 +540,7 @@ function handleIncomeSubmit(e) {
     }
 }
 
-window.openChangePinModal = function() {
-    document.getElementById("tools-popover").classList.add("hidden");
-    document.getElementById("current-pin-input").value = "";
-    document.getElementById("new-pin-input").value = "";
-    document.getElementById("confirm-pin-input").value = "";
-    document.getElementById("pin-error-msg").classList.add("hidden");
-    document.getElementById("change-pin-modal").classList.remove("hidden");
-};
-
-function handleChangePinSubmit(e) {
-    e.preventDefault();
-    const current = document.getElementById("current-pin-input").value;
-    const newPin = document.getElementById("new-pin-input").value;
-    const confirm = document.getElementById("confirm-pin-input").value;
-    const errorMsg = document.getElementById("pin-error-msg");
-
-    if (current !== getSecretPin() || newPin !== confirm || newPin.length !== 4) {
-        errorMsg.classList.remove("hidden");
-        return;
-    }
-
-    localStorage.setItem("antigravity_finance_pro_pin", newPin);
-    document.getElementById("change-pin-modal").classList.add("hidden");
-    showToast("PIN atualizado com sucesso!", "success");
-}
+// Funções de PIN removidas, substituídas pelo Login com Google
 
 window.openNotesModal = function(id) {
     const tx = appState.data.months[appState.currentMonthKey].transactions.find(t => t.id === id);
