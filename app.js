@@ -148,6 +148,13 @@ function setupAuth() {
             document.getElementById("main-app").classList.add("hidden");
         }
     });
+
+    // Tratamento de erro do redirecionamento do Google (caso haja bloqueio de cookies)
+    auth.getRedirectResult().catch(error => {
+        console.error("Erro no redirecionamento:", error);
+        loginError.textContent = "Erro de segurança: " + error.message;
+        loginError.classList.remove("hidden");
+    });
 }
 
 // 2. STORAGE (Firestore)
