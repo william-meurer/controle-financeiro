@@ -116,11 +116,29 @@ function setupAuth() {
 
     if(loginBtn) {
         loginBtn.addEventListener("click", async () => {
+            const email = document.getElementById("email-input").value.trim();
+            const password = document.getElementById("password-input").value;
+            
+            if (!email || !password) {
+                loginError.textContent = "Preencha e-mail e senha.";
+                loginError.classList.remove("hidden");
+                return;
+            }
+
             try {
-                const provider = new firebase.auth.GoogleAuthProvider();
-                await auth.signInWithPopup(provider);
+                loginBtn.textContent = "AGUARDE...";
+                loginBtn.style.opacity = "0.7";
+                await auth.signInWithEmailAndPassword(email, password);
+                loginBtn.textContent = "ENTRAR";
+                loginBtn.style.opacity = "1";
             } catch (error) {
-                loginError.textContent = "Erro ao fazer login. Tente novamente.";
+                loginBtn.textContent = "ENTRAR";
+                loginBtn.style.opacity = "1";
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                    loginError.textContent = "E-mail ou senha incorretos.";
+                } else {
+                    loginError.textContent = "Erro: " + error.message;
+                }
                 loginError.classList.remove("hidden");
                 console.error(error);
             }
@@ -148,12 +166,6 @@ function setupAuth() {
         }
     });
 
-    // Tratamento de erro do redirecionamento do Google (caso haja bloqueio de cookies)
-    auth.getRedirectResult().catch(error => {
-        console.error("Erro no redirecionamento:", error);
-        loginError.textContent = "Erro de segurança: " + error.message;
-        loginError.classList.remove("hidden");
-    });
 }
 
 // 2. STORAGE (Firestore)
