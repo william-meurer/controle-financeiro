@@ -9,7 +9,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=3.0">
+    <link rel="stylesheet" href="style.css?v=4.0">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#F0F4F8">
 </head>
@@ -126,6 +126,9 @@
                     <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
                         <h2><i data-lucide="arrow-down-circle"></i> Saídas</h2>
                         <div style="display: flex; align-items: center; gap: 1rem; margin-left: auto;">
+                            <button id="sort-by-value-btn" class="icon-btn-small sort-btn" title="Ordenar por valor (maior → menor)" onclick="toggleSortByValue()">
+                                <i data-lucide="arrow-down-wide-narrow"></i>
+                            </button>
                             <div class="stat-badge filter-badge" style="background: transparent; border: none; padding: 0;">
                                 <span>Ocultar Pagos</span>
                                 <label class="switch">
@@ -143,7 +146,7 @@
                         <div class="title-with-badge">
                             <h3>Contas Principais & Parcelamentos</h3>
                         </div>
-                        <button class="btn btn-small btn-outline" onclick="openAddModal('Despesas Fixas', 'Fixo')">
+                        <button class="btn btn-small btn-outline" onclick="openAddModal('fixed')">
                             <i data-lucide="plus"></i> Nova Conta
                         </button>
                     </div>
@@ -153,8 +156,8 @@
                                 <tr>
                                     <th>Status</th>
                                     <th>Descrição / Item</th>
-                                    <th>Categoria</th>
-                                    <th>Parcela / Término</th>
+                                    <th>Natureza</th>
+                                    <th>Término</th>
                                     <th>Valor (R$)</th>
                                     <th>Ações</th>
                                 </tr>
@@ -165,33 +168,35 @@
                         </table>
                     </div>
                 </div>
+            </div>
 
-                <div class="table-section mt-6">
-                    <div class="table-header mb-2" style="display: flex; justify-content: space-between; align-items: center;">
-                        <div class="title-with-badge">
-                            <h3>Débitos Automáticos & Assinaturas</h3>
+            <!-- 4. ASSINATURAS & DÉBITOS AUTOMÁTICOS (Seção independente) -->
+            <div class="bento-item table-bento glass-card section-assinaturas">
+                <div class="section-header">
+                    <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+                        <h2><i data-lucide="credit-card"></i> Assinaturas & Débitos Automáticos</h2>
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-left: auto;">
+                            <span class="section-subtitle" id="subscriptions-total">R$ 0,00</span>
+                            <button class="btn btn-small btn-outline" onclick="openAddModal('subscription')">
+                                <i data-lucide="plus"></i> Nova Assinatura
+                            </button>
                         </div>
-                        <button class="btn btn-small btn-outline" onclick="openAddModal('Débitos Automáticos', 'Débito Automático')">
-                            <i data-lucide="plus"></i> Novo Débito
-                        </button>
                     </div>
-                    <div class="table-responsive">
-                        <table class="data-table" id="auto-expenses-table">
-                            <thead>
-                                <tr>
-                                    <th>Status</th>
-                                    <th>Descrição / Item</th>
-                                    <th>Categoria</th>
-                                    <th>Tipo</th>
-                                    <th>Valor (R$)</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Injected by JS -->
-                            </tbody>
-                        </table>
-                    </div>
+                </div>
+                <p class="text-sm text-muted" style="margin-bottom: 1rem; margin-top: -0.5rem;">Espelho das assinaturas no crédito — não impacta no saldo mensal.</p>
+                <div class="table-responsive">
+                    <table class="data-table" id="auto-expenses-table">
+                        <thead>
+                            <tr>
+                                <th>Descrição / Item</th>
+                                <th>Valor (R$)</th>
+                                <th style="width: 80px; text-align: right;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Injected by JS -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
@@ -226,33 +231,17 @@
                         <input type="number" id="tx-amount" step="0.01" required>
                     </div>
                     <div class="form-group">
-                        <label>Categoria</label>
-                        <select id="tx-category">
-                            <option value="Moradia">Moradia</option>
-                            <option value="Parcelamentos">Parcelamentos</option>
-                            <option value="Despesas Fixas">Despesas Fixas</option>
-                            <option value="Débitos Automáticos">Débitos Automáticos</option>
-                            <option value="Outros">Outros</option>
+                        <label>Natureza</label>
+                        <select id="tx-nature">
+                            <option value="fixed">Conta Fixa</option>
+                            <option value="installment">Parcelamento</option>
+                            <option value="subscription">Assinatura / Débito</option>
                         </select>
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Tipo de Gasto</label>
-                        <select id="tx-type">
-                            <option value="Fixo">Despesa Fixa</option>
-                            <option value="Parcelado">Parcelamento / Contrato</option>
-                            <option value="Débito Automático">Débito Automático</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>Data de Término (Opcional)</label>
-                        <input type="month" id="tx-end-date" title="Quando este parcelamento termina?">
-                    </div>
-                </div>
-                <div class="form-group" id="tx-parcela-group">
-                    <label>Informação da Parcela</label>
-                    <input type="text" id="tx-parcela-text" placeholder="Ex: 12/21 (Fim: 06/2027)">
+                <div class="form-group" id="tx-end-date-group">
+                    <label>Data de Término (Opcional)</label>
+                    <input type="month" id="tx-end-date" title="Quando este parcelamento termina?">
                 </div>
                 <div class="modal-footer" style="justify-content: space-between;">
                     <button type="button" class="btn btn-rose btn-small" id="delete-tx-btn" style="display: none;"><i data-lucide="trash-2"></i> Excluir</button>

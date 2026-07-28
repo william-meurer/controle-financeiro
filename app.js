@@ -32,7 +32,8 @@ let appState = {
     data: null,
     isPrivacyMode: true,
     theme: "light",
-    isAuthenticated: false
+    isAuthenticated: false,
+    sortByValueDesc: false
 };
 let itemToDeleteId = null;
 
@@ -160,7 +161,7 @@ function setupAuth() {
             appState.isAuthenticated = true;
             document.getElementById("login-screen").classList.add("hidden");
             document.getElementById("main-app").classList.remove("hidden");
-            loadStateFromStorage(); // Agora busca do firestore
+            loadStateFromStorage();
         } else {
             appState.isAuthenticated = false;
             appState.data = null;
@@ -215,6 +216,10 @@ async function loadStateFromStorage() {
             }
             if (migratedIncome) await saveStateToStorage();
 
+            // Migração category+type → nature
+            const didMigrateNature = migrateToNatureField();
+            if (didMigrateNature) await saveStateToStorage();
+
             if (!appState.data.months[appState.currentMonthKey]) {
                 const keys = Object.keys(appState.data.months).sort();
                 appState.currentMonthKey = keys[keys.length - 1] || "2026-07";
@@ -226,6 +231,7 @@ async function loadStateFromStorage() {
             } else {
                 appState.data = JSON.parse(JSON.stringify(DEFAULT_INITIAL_DATA));
             }
+            const didMigrateNature = migrateToNatureField();
             await saveStateToStorage();
         }
         renderApp();
@@ -233,6 +239,27 @@ async function loadStateFromStorage() {
         console.error("Erro ao carregar dados", e);
         showToast("Erro ao carregar do banco de dados.", "error");
     }
+}
+
+function migrateToNatureField() {
+    if (!appState.data || !appState.data.months) return false;
+    let migrated = false;
+    for (let monthKey in appState.data.months) {
+        const mData = appState.data.months[monthKey];
+        if (!mData.transactions) continue;
+        mData.transactions.forEach(tx => {
+            if (tx.nature) return; // Already migrated
+            migrated = true;
+            if (tx.type === "Débito Automático" || tx.category === "Débitos Automáticos") {
+                tx.nature = "subscription";
+            } else if (tx.type === "Parcelado") {
+                tx.nature = "installment";
+            } else {
+                tx.nature = "fixed";
+            }
+        });
+    }
+    return migrated;
 }
 
 async function saveStateToStorage() {
@@ -290,8 +317,8 @@ function setupEventListeners() {
     document.getElementById("confirm-close-month-btn").addEventListener("click", executeMonthlyClosing);
     
     // Dynamic modal form fields
-    document.getElementById("tx-type").addEventListener("change", (e) => {
-        document.getElementById("tx-parcela-group").style.display = (e.target.value === "Parcelado" || e.target.value === "Fixo") ? "flex" : "none";
+    document.getElementById("tx-nature").addEventListener("change", (e) => {
+        document.getElementById("tx-end-date-group").style.display = (e.target.value === "installment") ? "block" : "none";
     });
 
     document.getElementById("export-json-btn").addEventListener("click", exportBackupJSON);
@@ -390,13 +417,13 @@ function renderApp() {
         nextBtn.title = "Próximo Mês (Indisponível)";
     }
 
-    // KPIs (Cálculo do Saldo Livre = Entradas Recebidas - Saídas Pagas)
-    // A pedido do usuário (Opção A), o cálculo é dinâmico com base nas marcações.
+    // KPIs — Assinaturas (subscription) NÃO entram no cálculo de Saídas/Saldo
     const incomes = currentMonthData.incomes || [];
     const totalIncomeReceived = incomes.filter(i => i.received).reduce((acc, i) => acc + Number(i.amount), 0);
-    const totalIncomePredicted = incomes.reduce((acc, i) => acc + Number(i.amount), 0);
     
-    const totalExpenses = currentMonthData.transactions.filter(tx => tx.ok).reduce((acc, tx) => acc + Number(tx.amount), 0);
+    // Apenas transações que NÃO são assinaturas contam para saídas
+    const realExpenses = currentMonthData.transactions.filter(tx => tx.ok && tx.nature !== "subscription");
+    const totalExpenses = realExpenses.reduce((acc, tx) => acc + Number(tx.amount), 0);
     const leftover = totalIncomeReceived - totalExpenses;
 
     // Display
@@ -477,16 +504,22 @@ function renderBentoTables(transactions) {
     mainTableBody.innerHTML = "";
     autoTableBody.innerHTML = "";
 
+    // Separar transações por natureza
+    const mainTxs = transactions.filter(tx => tx.nature !== "subscription");
+    const subTxs = transactions.filter(tx => tx.nature === "subscription");
+
+    // Ordenar contas principais se ativo
+    let sortedMainTxs = [...mainTxs];
+    if (appState.sortByValueDesc) {
+        sortedMainTxs.sort((a, b) => Number(b.amount) - Number(a.amount));
+    }
+
     let paidCount = 0;
-    let paidTotal = 0;
+    const totalMain = sortedMainTxs.length;
 
-    transactions.forEach(tx => {
-        if (tx.type === "Variável") return; // Ignora se sobrou algum variável antigo
-
-        if (tx.ok) {
-            paidCount++;
-            paidTotal += Number(tx.amount);
-        }
+    // Render Main Expenses
+    sortedMainTxs.forEach(tx => {
+        if (tx.ok) paidCount++;
 
         const tr = document.createElement("tr");
         if (tx.ok) {
@@ -510,30 +543,46 @@ function renderBentoTables(transactions) {
             </div>
         `;
 
-        if (tx.type === "Débito Automático" || tx.category === "Débitos Automáticos") {
-            tr.innerHTML = `
-                <td>${statusHtml}</td>
-                <td><strong>${tx.desc}</strong></td>
-                <td><span class="badge badge-purple">${tx.category}</span></td>
-                <td>Automático</td>
-                <td class="font-bold">${formatCurrency(tx.amount)}</td>
-                <td>${actionsHtml}</td>
-            `;
-            autoTableBody.appendChild(tr);
-        } else {
-            tr.innerHTML = `
-                <td>${statusHtml}</td>
-                <td><strong>${tx.desc}</strong></td>
-                <td><span class="badge badge-primary">${tx.category}</span></td>
-                <td>${tx.parcela || (tx.endDate ? `Fim: ${formatMonthYear(tx.endDate)}` : "Contínua")}</td>
-                <td class="font-bold">${formatCurrency(tx.amount)}</td>
-                <td>${actionsHtml}</td>
-            `;
-            mainTableBody.appendChild(tr);
-        }
+        const terminoLabel = tx.endDate ? `Fim: ${formatMonthYear(tx.endDate)}` : (tx.nature === "installment" ? "—" : "Recorrente");
+
+        tr.innerHTML = `
+            <td>${statusHtml}</td>
+            <td><strong>${tx.desc}</strong></td>
+            <td><span class="badge ${tx.nature === 'installment' ? 'badge-purple' : 'badge-primary'}">${tx.nature === 'installment' ? 'Parcelamento' : 'Conta Fixa'}</span></td>
+            <td>${terminoLabel}</td>
+            <td class="font-bold">${formatCurrency(tx.amount)}</td>
+            <td>${actionsHtml}</td>
+        `;
+        mainTableBody.appendChild(tr);
     });
 
-    document.getElementById("closing-paid-count").textContent = `${paidCount} / ${transactions.filter(t => t.type !== 'Variável').length}`;
+    // Render Subscriptions (simplified — no status toggle)
+    let subTotal = 0;
+    subTxs.forEach(tx => {
+        subTotal += Number(tx.amount);
+        const tr = document.createElement("tr");
+
+        const notesActive = (tx.notes && tx.notes.trim() !== "") ? 'style="color: var(--teal);"' : '';
+        const actionsHtml = `
+            <div class="action-buttons" style="justify-content: flex-end;">
+                <button class="icon-btn-small" onclick="openNotesModal('${tx.id}')" title="Anotações / Links" ${notesActive}><i data-lucide="file-text"></i></button>
+                <button class="icon-btn-small" onclick="openEditModal('${tx.id}')" title="Editar"><i data-lucide="edit-2"></i></button>
+            </div>
+        `;
+
+        tr.innerHTML = `
+            <td><strong>${tx.desc}</strong></td>
+            <td class="font-bold">${formatCurrency(tx.amount)}</td>
+            <td>${actionsHtml}</td>
+        `;
+        autoTableBody.appendChild(tr);
+    });
+
+    // Update counters
+    document.getElementById("closing-paid-count").textContent = `${paidCount} / ${totalMain}`;
+    
+    const subTotalEl = document.getElementById("subscriptions-total");
+    if (subTotalEl) subTotalEl.textContent = formatCurrency(subTotal);
 }
 
 function formatMonthYear(yyyymm) {
@@ -544,13 +593,23 @@ function formatMonthYear(yyyymm) {
 
 window.toggleHidePaid = function() {
     const isHidden = document.getElementById("hide-paid-toggle").checked;
-    document.querySelectorAll(".row-paid").forEach(row => {
+    // Apenas afeta a seção de Saídas (main-expenses-table), não as assinaturas
+    document.querySelectorAll("#main-expenses-table .row-paid").forEach(row => {
         if (isHidden) {
             row.classList.add("row-hidden");
         } else {
             row.classList.remove("row-hidden");
         }
     });
+};
+
+window.toggleSortByValue = function() {
+    appState.sortByValueDesc = !appState.sortByValueDesc;
+    const btn = document.getElementById("sort-by-value-btn");
+    if (btn) {
+        btn.classList.toggle("active", appState.sortByValueDesc);
+    }
+    renderApp();
 };
 
 window.toggleTxPaid = function(id) {
@@ -564,17 +623,15 @@ window.toggleTxPaid = function(id) {
 
 
 // 6. MODALS LOGIC
-window.openAddModal = function(defaultCategory = "Despesas Fixas", defaultType = "Fixo") {
-    document.getElementById("modal-title").textContent = "Nova Conta / Débito";
+window.openAddModal = function(defaultNature = "fixed") {
+    document.getElementById("modal-title").textContent = defaultNature === "subscription" ? "Nova Assinatura" : "Nova Conta";
     document.getElementById("tx-id").value = "";
     document.getElementById("tx-desc").value = "";
     document.getElementById("tx-amount").value = "";
-    document.getElementById("tx-category").value = defaultCategory;
-    document.getElementById("tx-type").value = defaultType;
+    document.getElementById("tx-nature").value = defaultNature;
     document.getElementById("tx-end-date").value = "";
-    document.getElementById("tx-parcela-text").value = "";
     
-    document.getElementById("tx-parcela-group").style.display = (defaultType === "Parcelado" || defaultType === "Fixo") ? "flex" : "none";
+    document.getElementById("tx-end-date-group").style.display = (defaultNature === "installment") ? "block" : "none";
     document.getElementById("delete-tx-btn").style.display = "none";
     document.getElementById("transaction-modal").classList.remove("hidden");
 };
@@ -586,12 +643,10 @@ window.openEditModal = function(id) {
     document.getElementById("tx-id").value = tx.id;
     document.getElementById("tx-desc").value = tx.desc;
     document.getElementById("tx-amount").value = tx.amount;
-    document.getElementById("tx-category").value = tx.category;
-    document.getElementById("tx-type").value = tx.type;
+    document.getElementById("tx-nature").value = tx.nature || "fixed";
     document.getElementById("tx-end-date").value = tx.endDate || "";
-    document.getElementById("tx-parcela-text").value = tx.parcela || "";
     
-    document.getElementById("tx-parcela-group").style.display = (tx.type === "Parcelado" || tx.type === "Fixo") ? "flex" : "none";
+    document.getElementById("tx-end-date-group").style.display = (tx.nature === "installment") ? "block" : "none";
     document.getElementById("delete-tx-btn").style.display = "inline-flex";
     document.getElementById("transaction-modal").classList.remove("hidden");
 };
@@ -622,10 +677,8 @@ function handleTransactionSubmit(e) {
     const id = document.getElementById("tx-id").value;
     const desc = document.getElementById("tx-desc").value.trim();
     const amount = parseFloat(document.getElementById("tx-amount").value);
-    const category = document.getElementById("tx-category").value;
-    const type = document.getElementById("tx-type").value;
+    const nature = document.getElementById("tx-nature").value;
     const endDate = document.getElementById("tx-end-date").value;
-    const parcela = document.getElementById("tx-parcela-text").value.trim();
 
     if (!desc || isNaN(amount)) return;
 
@@ -635,10 +688,8 @@ function handleTransactionSubmit(e) {
         if (tx) {
             tx.desc = desc;
             tx.amount = amount;
-            tx.category = category;
-            tx.type = type;
-            tx.endDate = endDate;
-            tx.parcela = parcela;
+            tx.nature = nature;
+            tx.endDate = nature === "installment" ? endDate : "";
         }
     } else {
         // Novo lançamento
@@ -646,10 +697,8 @@ function handleTransactionSubmit(e) {
             id: "tx-" + Date.now() + Math.random().toString(36).substr(2, 4),
             desc,
             amount,
-            category,
-            type,
-            endDate,
-            parcela,
+            nature,
+            endDate: nature === "installment" ? endDate : "",
             ok: false
         });
     }
@@ -794,29 +843,18 @@ function executeMonthlyClosing() {
         const nextTransactions = [];
         
         currentMonthData.transactions.forEach(tx => {
-            if (tx.type === "Variável") return;
             if (tx.endDate && tx.endDate === currentKey) return; // Terminou
-
-            let newParcela = tx.parcela;
-            if (newParcela && newParcela.includes("/")) {
-                newParcela = newParcela.replace(/(\d+)\/(\d+)/, (match, p1, p2) => {
-                    const currentP = parseInt(p1);
-                    const totalP = parseInt(p2);
-                    return currentP < totalP ? `${currentP + 1}/${totalP}` : match;
-                });
-            }
 
             nextTransactions.push({
                 ...tx,
                 id: "tx-" + Date.now() + Math.random().toString(36).substr(2, 4),
-                parcela: newParcela,
                 ok: false
             });
         });
 
         appState.data.months[nextKey] = {
             label: nextLabel,
-            incomes: [], // Entradas do mês sempre começam vazias para o usuário preencher
+            incomes: [],
             closed: false,
             transactions: nextTransactions
         };
@@ -840,13 +878,13 @@ function exportBackupJSON() {
 function exportCurrentMonthCSV() {
     const currentMonthData = appState.data.months[appState.currentMonthKey];
     let csv = "data:text/csv;charset=utf-8,\uFEFF";
-    csv += "Status;Descricao;Categoria;Tipo;Parcela;Termino;Valor\r\n";
+    csv += "Status;Descricao;Natureza;Termino;Valor\r\n";
 
     currentMonthData.transactions.forEach(tx => {
-        if(tx.type === "Variável") return;
+        const natureLabel = tx.nature === "subscription" ? "Assinatura" : (tx.nature === "installment" ? "Parcelamento" : "Conta Fixa");
         const row = [
-            tx.ok ? "PAGO" : "PENDENTE", `"${tx.desc}"`, `"${tx.category}"`, `"${tx.type}"`,
-            `"${tx.parcela || ""}"`, `"${tx.endDate || ""}"`, tx.amount.toFixed(2).replace(".", ",")
+            tx.ok ? "PAGO" : "PENDENTE", `"${tx.desc}"`, `"${natureLabel}"`,
+            `"${tx.endDate || ""}"`, tx.amount.toFixed(2).replace(".", ",")
         ];
         csv += row.join(";") + "\r\n";
     });
