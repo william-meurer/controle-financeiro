@@ -1,0 +1,16 @@
+{
+  "name": "Controle Financeiro",
+  "short_name": "Controle Financeiro",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#DFE8F2",
+  "theme_color": "#ffffff",
+  "description": "Sistema de Gestão Financeira Executiva",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3135/3135673.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

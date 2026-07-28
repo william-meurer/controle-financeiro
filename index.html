@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Controle Financeiro</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css?v=2.1">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#DFE8F2">
+</head>
+<body>
+    <div class="app-background">
+        <div class="gradient-sphere sphere-1"></div>
+        <div class="gradient-sphere sphere-2"></div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="login-overlay">
+        <div class="login-card glass-card">
+            <input type="password" id="pin-input" placeholder="••••" maxlength="4" autocomplete="off" inputmode="numeric" style="height: 56px; margin-top: 1rem;">
+            <button id="login-btn" class="btn btn-primary w-full mt-4" style="height: 56px; font-size: 1.1rem;">Desbloquear</button>
+            <p id="login-error" class="text-rose hidden mt-2 text-sm text-center">PIN incorreto. Tente novamente.</p>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="main-app" class="app-layout hidden">
+        
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <div style="display: flex; justify-content: flex-start; align-items: center; gap: 1rem;">
+                    <button id="prev-month-btn" class="icon-btn" title="Mês Anterior" style="color: var(--text-main); background: rgba(0,0,0,0.05); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="chevron-left"></i>
+                    </button>
+                    <h1 style="font-family: var(--font-heading); font-size: 1.8rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 0.8rem; margin: 0;">
+                        <i data-lucide="calendar" style="color: var(--teal);"></i>
+                        <span id="current-month-label">Julho 2026</span>
+                    </h1>
+                    <button id="next-month-btn" class="icon-btn" title="Próximo Mês" style="color: var(--text-main); background: rgba(0,0,0,0.05); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+                        <i data-lucide="chevron-right"></i>
+                    </button>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center; position: relative; z-index: 1000;">
+                    <button id="privacy-toggle-btn" class="btn" style="width: 48px; height: 48px; border-radius: 12px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.6); color: var(--purple); transition: background 0.3s;" title="Modo Privacidade">
+                        <i data-lucide="eye-off" id="privacy-icon"></i>
+                    </button>
+                    <button id="theme-toggle-btn" class="btn" style="width: 48px; height: 48px; border-radius: 12px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.6); color: var(--text-main); transition: background 0.3s;" title="Alternar Tema">
+                        <i data-lucide="sun" id="theme-icon"></i>
+                    </button>
+                    <button id="tools-menu-btn" class="btn" style="width: 48px; height: 48px; border-radius: 12px; padding: 0; display: flex; align-items: center; justify-content: center; background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.6); color: var(--text-main); transition: background 0.3s;" title="Ferramentas">
+                        <i data-lucide="menu"></i>
+                    </button>
+                    <button id="close-month-btn" class="btn btn-magic" style="border-radius: 12px; padding: 0 20px; height: 48px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; transition: transform 0.2s;">
+                        <span>Fechar Mês</span>
+                        <i data-lucide="arrow-right"></i>
+                    </button>
+                    <!-- Popover de Ferramentas Oculto -->
+                    <div id="tools-popover" class="hidden" style="position: absolute; right: 0; top: 60px; background: var(--bg-card); padding: 1rem; border-radius: 16px; width: 220px; border: 1px solid var(--border-glass);">
+                        <div style="display: flex; flex-direction: column; gap: 0.25rem;">
+                            <button id="export-json-btn" class="btn btn-text w-full" style="justify-content: flex-start; color: var(--text-main);"><i data-lucide="download"></i> Backup JSON</button>
+                            <button id="export-csv-btn" class="btn btn-text w-full" style="justify-content: flex-start; color: var(--text-main);"><i data-lucide="table"></i> Exportar Excel</button>
+                            <input type="file" id="import-json-file" accept=".json" class="hidden">
+                            <button onclick="document.getElementById('import-json-file').click()" class="btn btn-text w-full" style="justify-content: flex-start; color: var(--text-main);"><i data-lucide="upload"></i> Restaurar JSON</button>
+                            <button onclick="openChangePinModal()" class="btn btn-text w-full mt-2" style="justify-content: flex-start; color: var(--text-main); border-top: 1px solid var(--border-glass); padding-top: 0.8rem;"><i data-lucide="key"></i> Alterar PIN</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bento-grid">
+            <!-- 1. KPI Overview (Span Full) -->
+            <div class="bento-item kpi-bento glass-card" style="gap: 1.5rem; background: transparent; border: none; box-shadow: none; padding: 0;">
+                <div class="kpi-mini highlight-kpi" style="flex: 1;">
+                    <span class="kpi-label">Renda / Orçamento Mês <button id="edit-income-btn" class="icon-btn-tiny" title="Editar" style="margin-left: 0.3rem;"><i data-lucide="edit-3"></i></button></span>
+                    <strong id="kpi-income" class="sensitive-data text-main">R$ 4.893,00</strong>
+                </div>
+                
+                <div class="kpi-mini highlight-kpi" style="flex: 1;">
+                    <span class="kpi-label">Saídas Totais</span>
+                    <strong id="kpi-expenses" class="sensitive-data text-main">R$ 3.896,21</strong>
+                </div>
+                
+                <div class="kpi-mini highlight-kpi" id="saldo-card" style="flex: 1;">
+                    <span class="kpi-label">Saldo</span>
+                    <strong id="kpi-leftover" class="sensitive-data text-gradient">R$ 996,79</strong>
+                </div>
+            </div>
+
+            <!-- 2. Tables Area -->
+            <div class="bento-item table-bento glass-card" style="box-shadow: none !important; border: 1px solid var(--border-glass);">
+                <div class="table-bento-header">
+                    <h2 style="display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="check-square"></i> Fechamento Mensal <span id="fechamento-month-label" style="font-weight: 400; font-size: 0.9em; opacity: 0.8;"></span></h2>
+                    <div class="closing-stats">
+                        <div class="stat-badge filter-badge">
+                            <span>Ocultar Pagos</span>
+                            <label class="switch">
+                                <input type="checkbox" id="hide-paid-toggle" onchange="toggleHidePaid()">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="stat-badge">
+                            <span>Pagos:</span>
+                            <strong id="closing-paid-count">0 / 0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-section mt-4">
+                    <div class="table-header mb-2" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="title-with-badge">
+                            <h3>Contas Principais & Parcelamentos</h3>
+                        </div>
+                        <button class="btn btn-small btn-outline" onclick="openAddModal('Despesas Fixas', 'Fixo')">
+                            <i data-lucide="plus"></i> Nova Conta
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="main-expenses-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Descrição / Item</th>
+                                    <th>Categoria</th>
+                                    <th>Parcela / Término</th>
+                                    <th>Valor (R$)</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="table-section mt-6">
+                    <div class="table-header mb-2" style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="title-with-badge">
+                            <h3>Débitos Automáticos & Assinaturas</h3>
+                        </div>
+                        <button class="btn btn-small btn-outline" onclick="openAddModal('Débitos Automáticos', 'Débito Automático')">
+                            <i data-lucide="plus"></i> Novo Débito
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table" id="auto-expenses-table">
+                            <thead>
+                                <tr>
+                                    <th>Status</th>
+                                    <th>Descrição / Item</th>
+                                    <th>Categoria</th>
+                                    <th>Tipo</th>
+                                    <th>Valor (R$)</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Injected by JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            </div>
+
+
+
+
+            <!-- Toast Notification Container -->
+            <div id="toast-container" style="position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 9999; pointer-events: none;"></div>
+            
+            <footer style="margin-top: 32px; margin-bottom: 32px; height: 40px; display: flex; justify-content: center; align-items: center; color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">
+                © 2026 Controle Financeiro
+            </footer>
+        </main>
+    </div>
+
+    <!-- MODAL 1: EDIT TRANSACTION -->
+    <div id="transaction-modal" class="modal-overlay hidden">
+        <div class="modal-container glass-card">
+            <div class="modal-header">
+                <h3 id="modal-title">Editar Lançamento</h3>
+                <button class="icon-btn-small close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <form id="transaction-form" class="modal-body">
+                <input type="hidden" id="tx-id">
+                <div class="form-group">
+                    <label>Descrição / Item</label>
+                    <input type="text" id="tx-desc" placeholder="Ex: Aluguel" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Valor (R$)</label>
+                        <input type="number" id="tx-amount" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select id="tx-category">
+                            <option value="Moradia">Moradia</option>
+                            <option value="Parcelamentos">Parcelamentos</option>
+                            <option value="Despesas Fixas">Despesas Fixas</option>
+                            <option value="Débitos Automáticos">Débitos Automáticos</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Tipo de Gasto</label>
+                        <select id="tx-type">
+                            <option value="Fixo">Despesa Fixa</option>
+                            <option value="Parcelado">Parcelamento / Contrato</option>
+                            <option value="Débito Automático">Débito Automático</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Data de Término (Opcional)</label>
+                        <input type="month" id="tx-end-date" title="Quando este parcelamento termina?">
+                    </div>
+                </div>
+                <div class="form-group" id="tx-parcela-group">
+                    <label>Informação da Parcela</label>
+                    <input type="text" id="tx-parcela-text" placeholder="Ex: 12/21 (Fim: 06/2027)">
+                </div>
+                <div class="modal-footer" style="justify-content: space-between;">
+                    <button type="button" class="btn btn-rose btn-small" id="delete-tx-btn" style="display: none;"><i data-lucide="trash-2"></i> Excluir</button>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <button type="button" class="btn btn-outline close-modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Lançamento</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: EDIT INCOME -->
+    <div id="income-modal" class="modal-overlay hidden">
+        <div class="modal-container glass-card modal-small">
+            <div class="modal-header">
+                <h3>Editar Renda Base</h3>
+                <button class="icon-btn-small close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <form id="income-form" class="modal-body">
+                <div class="form-group">
+                    <label>Receita Total Mês (R$)</label>
+                    <input type="number" id="income-amount-input" step="0.01" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Atualizar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: MONTH CLOSING CONFIRMATION -->
+    <div id="close-month-modal" class="modal-overlay hidden">
+        <div class="modal-container glass-card">
+            <div class="modal-header">
+                <h3>Fechar Mês</h3>
+                <button class="icon-btn-small close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Preparar o próximo mês automagicamente?</p>
+                <ul class="magic-list mt-3">
+                    <li><i data-lucide="check"></i> Arquiva o histórico de <span id="closing-current-month-name">Julho 2026</span>.</li>
+                    <li><i data-lucide="check"></i> Cria <span id="closing-next-month-name">Agosto 2026</span> copiando os gastos fixos.</li>
+                    <li><i data-lucide="check"></i> Avança parcelas e remove dívidas vencidas.</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline close-modal">Cancelar</button>
+                <button type="button" id="confirm-close-month-btn" class="btn btn-magic glow-btn">
+                    Sim, Avançar!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: CHANGE PIN -->
+    <div id="change-pin-modal" class="modal-overlay hidden">
+        <div class="modal-container glass-card modal-small">
+            <div class="modal-header">
+                <h3>Alterar PIN</h3>
+                <button class="icon-btn-small close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <form id="change-pin-form" class="modal-body">
+                <div class="form-group">
+                    <label>PIN Atual</label>
+                    <input type="password" id="current-pin-input" placeholder="••••" maxlength="4" required>
+                </div>
+                <div class="form-group">
+                    <label>Novo PIN</label>
+                    <input type="password" id="new-pin-input" placeholder="••••" maxlength="4" required>
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Novo PIN</label>
+                    <input type="password" id="confirm-pin-input" placeholder="••••" maxlength="4" required>
+                </div>
+                <p id="pin-error-msg" class="text-rose text-sm hidden">Senhas não conferem ou PIN atual incorreto.</p>
+                <div class="modal-footer mt-4">
+                    <button type="button" class="btn btn-outline close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Novo PIN</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 5: NOTES (ANOTAÇÕES) -->
+    <div id="notes-modal" class="modal-overlay hidden">
+        <div class="modal-container glass-card">
+            <div class="modal-header">
+                <h3><i data-lucide="file-text"></i> Anotações & Links</h3>
+                <button class="icon-btn-small close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <form id="notes-form" class="modal-body">
+                <input type="hidden" id="notes-tx-id">
+                <p class="text-sm text-muted mb-3" id="notes-tx-desc">Conta: </p>
+                <div class="form-group">
+                    <label>Informações (Chave PIX, Link, Código de Barras...)</label>
+                    <textarea id="notes-input" rows="6" class="w-full" style="padding: 1rem; border-radius: 12px; border: 1px solid #E5E7EB; background: #F9FAFB; font-family: var(--font-body); font-size: 0.9rem; resize: vertical; outline: none;"></textarea>
+                </div>
+                <div class="modal-footer mt-2" style="padding: 1.25rem 0 0 0;">
+                    <button type="button" class="btn btn-outline close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Anotação</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 6: DELETE CONFIRMATION -->
+    <div id="delete-confirm-modal" class="modal-overlay hidden">
+        <div class="modal-container glass-card modal-small">
+            <div class="modal-header">
+                <h3><i data-lucide="trash-2" class="icon-rose"></i> Confirmar Exclusão</h3>
+                <button class="icon-btn-small close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir permanentemente a conta <strong id="delete-confirm-name"></strong>?</p>
+                <p class="text-sm text-muted mt-2">Esta ação não poderá ser desfeita.</p>
+            </div>
+            <div class="modal-footer mt-4">
+                <button type="button" class="btn btn-outline close-modal">Cancelar</button>
+                <button type="button" id="btn-confirm-delete" class="btn" style="background: var(--rose); color: white;">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script src="app.js"></script>
+</body>
+</html>
