@@ -110,9 +110,8 @@ function initIcons() {
 
 // 1. AUTHENTICATION & LOGIN
 function setupAuth() {
-    // Configura para NÃO salvar a sessão, deslogando a cada refresh ou aba fechada
-    auth.setPersistence(firebase.auth.Auth.Persistence.NONE)
-        .catch(error => console.error("Erro na persistência:", error));
+    // Força o logout imediato sempre que a página for carregada ou receber refresh
+    auth.signOut().catch(error => console.error("Erro ao forçar logout:", error));
 
     const loginBtn = document.getElementById("login-btn");
     const loginError = document.getElementById("login-error");
