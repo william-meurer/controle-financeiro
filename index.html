@@ -25,7 +25,7 @@
             <input type="email" id="email-input" placeholder="Seu E-mail" autocomplete="email" style="height: 52px; margin-bottom: 12px;">
             <input type="password" id="password-input" placeholder="Sua Senha" autocomplete="current-password" style="height: 52px; margin-bottom: 16px;">
             
-            <button id="login-btn" class="btn btn-primary w-full" style="height: 52px; font-size: 1rem; font-weight: 600; letter-spacing: 0.05em;">ENTRAR</button>
+            <button id="login-btn" class="btn btn-primary w-full" style="height: 52px; font-size: 1rem; font-weight: 400; letter-spacing: 0.05em;">ENTRAR</button>
             <p id="login-error" class="text-rose hidden mt-4 text-sm text-center">Erro ao fazer login.</p>
         </div>
     </div>
@@ -40,7 +40,7 @@
                     <button id="prev-month-btn" class="icon-btn" title="Mês Anterior" style="color: var(--text-main); background: rgba(0,0,0,0.05); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
                         <i data-lucide="chevron-left"></i>
                     </button>
-                    <h1 style="font-family: var(--font-heading); font-size: 1.8rem; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 0.8rem; margin: 0;">
+                    <h1 style="font-family: var(--font-heading); font-size: 1.8rem; font-weight: 400; color: var(--text-main); display: flex; align-items: center; gap: 0.8rem; margin: 0;">
                         <i data-lucide="calendar" style="color: var(--teal);"></i>
                         <span id="current-month-label">Julho 2026</span>
                     </h1>
@@ -58,7 +58,7 @@
                     <button id="tools-menu-btn" class="header-icon-btn" title="Ferramentas">
                         <i data-lucide="menu"></i>
                     </button>
-                    <button id="close-month-btn" class="btn btn-magic" style="border-radius: 12px; padding: 0 20px; height: 48px; font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; transition: transform 0.2s;">
+                    <button id="close-month-btn" class="btn btn-magic" style="border-radius: 12px; padding: 0 20px; height: 48px; font-weight: 400; font-size: 1rem; display: flex; align-items: center; gap: 0.5rem; transition: transform 0.2s;">
                         <span>Fechar Mês</span>
                         <i data-lucide="arrow-right"></i>
                     </button>
@@ -122,20 +122,19 @@
 
             <!-- 3. SAÍDAS (antes era "Fechamento Mensal") -->
             <div class="bento-item table-bento glass-card section-saidas" style="box-shadow: none !important; border: 1px solid var(--border-glass);">
-                <div class="table-bento-header">
-                    <h2 style="display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="arrow-down-circle"></i> Saídas <span id="fechamento-month-label" style="font-weight: 400; font-size: 0.85em; opacity: 0.7;"></span></h2>
-                    <div class="closing-stats">
-                        <div class="stat-badge filter-badge">
-                            <span>Ocultar Pagos</span>
-                            <label class="switch">
-                                <input type="checkbox" id="hide-paid-toggle" onchange="toggleHidePaid()">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="stat-badge">
-                            <span>Pagos:</span>
-                            <strong id="closing-paid-count">0 / 0</strong>
-                        </div>
+                <div class="section-header" style="margin-bottom: 1.25rem;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; width: 100%;">
+                        <h2><i data-lucide="arrow-down-circle"></i> Saídas</h2>
+                        <span class="section-subtitle" id="closing-paid-count" style="margin-left: auto;">0 / 0</span>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: flex-end; margin-top: -3.5rem; margin-bottom: 1.5rem; position: relative; z-index: 10;">
+                    <div class="stat-badge filter-badge" style="background: transparent; border: none; padding: 0;">
+                        <span>Ocultar Pagos</span>
+                        <label class="switch">
+                            <input type="checkbox" id="hide-paid-toggle" onchange="toggleHidePaid()">
+                            <span class="slider"></span>
+                        </label>
                     </div>
                 </div>
 
