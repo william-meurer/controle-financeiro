@@ -84,7 +84,7 @@
             <!-- 1. KPI Overview (Span Full) -->
             <div class="bento-item kpi-bento glass-card" style="gap: 1.5rem; background: transparent; border: none; box-shadow: none; padding: 0;">
                 <div class="kpi-mini highlight-kpi" style="flex: 1;">
-                    <span class="kpi-label">Entradas <button id="edit-income-btn" class="icon-btn-tiny" title="Editar" style="margin-left: 0.3rem;"><i data-lucide="edit-3"></i></button></span>
+                    <span class="kpi-label">Entradas <button id="add-income-btn" class="btn btn-outline" style="margin-left: 0.5rem; padding: 2px 8px; font-size: 0.7rem; border-radius: 6px; height: 24px; color: var(--text-main); border-color: var(--border-glass);">NOVO</button></span>
                     <strong id="kpi-income" class="sensitive-data text-main">R$ ••••</strong>
                 </div>
                 
@@ -98,6 +98,32 @@
                     <strong id="kpi-leftover" class="sensitive-data text-gradient">R$ ••••</strong>
                 </div>
             </div>
+
+            <div class="bento-item table-bento glass-card mt-4">
+                <div class="section-header">
+                    <h2><i data-lucide="zap" class="text-purple"></i> Roadmap de Entradas</h2>
+                    <span class="section-subtitle" id="incomes-count" style="margin-left: auto;">0</span>
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="incomes-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">Status</th>
+                                <th>Descrição</th>
+                                <th>Data Prevista</th>
+                                <th>Valor</th>
+                                <th style="width: 80px; text-align: right;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Preenchido via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Footer Spacing -->
+            <div style="height: 60px;"></div>
 
             <!-- 2. Tables Area -->
             <div class="bento-item table-bento glass-card" style="box-shadow: none !important; border: 1px solid var(--border-glass);">
@@ -248,21 +274,33 @@
         </div>
     </div>
 
-    <!-- MODAL 2: EDIT INCOME -->
-    <div id="income-modal" class="modal-overlay hidden">
-        <div class="modal-container glass-card modal-small">
+    <!-- MODAL 2: INCOME MODAL (New Income) -->
+    <div id="add-income-modal" class="modal-overlay hidden">
+        <div class="modal-card">
             <div class="modal-header">
-                <h3>Editar Renda Base</h3>
-                <button class="icon-btn-small close-modal"><i data-lucide="x"></i></button>
+                <h2>Nova Entrada</h2>
+                <button class="close-modal icon-btn" title="Fechar"><i data-lucide="x"></i></button>
             </div>
-            <form id="income-form" class="modal-body">
+            <form id="add-income-form" class="modal-body">
+                <input type="hidden" id="inc-id">
                 <div class="form-group">
-                    <label>Receita Total Mês (R$)</label>
-                    <input type="number" id="income-amount-input" step="0.01" required>
+                    <label>Descrição (Ex: Salário, Venda)</label>
+                    <input type="text" id="inc-desc" required>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline close-modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Atualizar</button>
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" step="0.01" id="inc-amount" required>
+                </div>
+                <div class="form-group">
+                    <label>Data Prevista (Opcional)</label>
+                    <input type="date" id="inc-date">
+                </div>
+                <div class="form-actions mt-4" style="justify-content: space-between;">
+                    <button type="button" id="delete-inc-btn" class="btn text-rose" style="display: none; background: transparent; padding: 0;">Excluir</button>
+                    <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+                        <button type="button" class="btn btn-outline close-modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">Salvar Entrada</button>
+                    </div>
                 </div>
             </form>
         </div>

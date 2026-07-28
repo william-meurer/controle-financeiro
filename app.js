@@ -8,7 +8,7 @@ const DEFAULT_INITIAL_DATA = {
     months: {
         "2026-07": {
             label: "Julho 2026",
-            income: 0.00,
+            incomes: [],
             closed: false,
             transactions: []
         }
@@ -200,6 +200,21 @@ async function loadStateFromStorage() {
                 }
             }
 
+            // Migração de income para incomes array (para o Roadmap)
+            let migratedIncome = false;
+            for (let m in appState.data.months) {
+                const mData = appState.data.months[m];
+                if (mData.income !== undefined) {
+                    mData.incomes = [
+                        { id: 'inc-legacy-' + Date.now(), desc: 'Renda / Orçamento Mês', amount: Number(mData.income), date: '', received: true }
+                    ];
+                    delete mData.income;
+                    migratedIncome = true;
+                }
+                if (!mData.incomes) mData.incomes = [];
+            }
+            if (migratedIncome) await saveStateToStorage();
+
             if (!appState.data.months[appState.currentMonthKey]) {
                 const keys = Object.keys(appState.data.months).sort();
                 appState.currentMonthKey = keys[keys.length - 1] || "2026-07";
@@ -238,7 +253,7 @@ function setupEventListeners() {
 
     // Top Actions
     document.getElementById("close-month-btn").addEventListener("click", openCloseMonthModal);
-    document.getElementById("edit-income-btn").addEventListener("click", openIncomeModal);
+    if(document.getElementById("add-income-btn")) document.getElementById("add-income-btn").addEventListener("click", () => openAddIncomeModal());
     
     // Privacy & Theme State
     document.getElementById("privacy-toggle-btn").addEventListener("click", togglePrivacyMode);
@@ -269,7 +284,8 @@ function setupEventListeners() {
     // Form Submits
     document.getElementById("transaction-form").addEventListener("submit", handleTransactionSubmit);
     document.getElementById("delete-tx-btn").addEventListener("click", handleDeleteTransaction);
-    document.getElementById("income-form").addEventListener("submit", handleIncomeSubmit);
+    if(document.getElementById("add-income-form")) document.getElementById("add-income-form").addEventListener("submit", handleAddIncomeSubmit);
+    if(document.getElementById("delete-inc-btn")) document.getElementById("delete-inc-btn").addEventListener("click", handleDeleteIncome);
     document.getElementById("notes-form").addEventListener("submit", handleNotesSubmit);
     document.getElementById("confirm-close-month-btn").addEventListener("click", executeMonthlyClosing);
     
@@ -374,12 +390,17 @@ function renderApp() {
         nextBtn.title = "Próximo Mês (Indisponível)";
     }
 
-    // KPIs
-    const totalIncome = currentMonthData.income;
+    // KPIs (Cálculo do Saldo Livre = Entradas Recebidas - Saídas Pagas)
+    // A pedido do usuário (Opção A), o cálculo é dinâmico com base nas marcações.
+    const incomes = currentMonthData.incomes || [];
+    const totalIncomeReceived = incomes.filter(i => i.received).reduce((acc, i) => acc + Number(i.amount), 0);
+    const totalIncomePredicted = incomes.reduce((acc, i) => acc + Number(i.amount), 0);
+    
     const totalExpenses = currentMonthData.transactions.filter(tx => tx.ok).reduce((acc, tx) => acc + Number(tx.amount), 0);
-    const leftover = totalIncome - totalExpenses;
+    const leftover = totalIncomeReceived - totalExpenses;
 
-    document.getElementById("kpi-income").textContent = formatCurrency(totalIncome);
+    // Display
+    document.getElementById("kpi-income").textContent = formatCurrency(totalIncomeReceived);
     document.getElementById("kpi-expenses").textContent = formatCurrency(totalExpenses);
     document.getElementById("kpi-leftover").textContent = formatCurrency(leftover);
 
@@ -394,9 +415,60 @@ function renderApp() {
 
     // Tables & Timeline
     renderBentoTables(currentMonthData.transactions);
+    renderIncomesRoadmap(incomes);
     
     initIcons();
 }
+
+function renderIncomesRoadmap(incomes) {
+    const tbody = document.querySelector("#incomes-table tbody");
+    if(!tbody) return;
+    tbody.innerHTML = "";
+    
+    let receivedCount = 0;
+
+    incomes.forEach(inc => {
+        if(inc.received) receivedCount++;
+        
+        const tr = document.createElement("tr");
+        if (inc.received) tr.classList.add("row-paid"); // Mesmo estilo verde
+        
+        const statusHtml = `
+            <label class="switch">
+                <input type="checkbox" ${inc.received ? "checked" : ""} onchange="toggleIncomeReceived('${inc.id}')">
+                <span class="slider"></span>
+            </label>
+        `;
+        
+        const actionsHtml = `
+            <div class="action-buttons">
+                <button class="icon-btn-small" onclick="openAddIncomeModal('${inc.id}')" title="Editar"><i data-lucide="edit-2"></i></button>
+            </div>
+        `;
+        
+        tr.innerHTML = `
+            <td>${statusHtml}</td>
+            <td><strong>${inc.desc}</strong></td>
+            <td>${inc.date ? new Date(inc.date + 'T12:00:00').toLocaleDateString('pt-BR') : '-'}</td>
+            <td class="font-bold text-green">${formatCurrency(inc.amount)}</td>
+            <td>${actionsHtml}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    const countLabel = document.getElementById("incomes-count");
+    if(countLabel) countLabel.textContent = `${receivedCount} / ${incomes.length}`;
+}
+
+window.toggleIncomeReceived = function(id) {
+    const currentMonthData = appState.data.months[appState.currentMonthKey];
+    const inc = (currentMonthData.incomes || []).find(i => i.id === id);
+    if (inc) {
+        inc.received = !inc.received;
+        saveStateToStorage();
+        renderApp();
+    }
+};
 
 function renderBentoTables(transactions) {
     const mainTableBody = document.querySelector("#main-expenses-table tbody");
@@ -587,21 +659,79 @@ function handleTransactionSubmit(e) {
     renderApp();
 }
 
-function openIncomeModal() {
-    document.getElementById("income-amount-input").value = appState.data.months[appState.currentMonthKey].income;
-    document.getElementById("income-modal").classList.remove("hidden");
+// Income Management
+window.openAddIncomeModal = function(id = null) {
+    const modal = document.getElementById("add-income-modal");
+    if(!modal) return;
+    
+    if (id) {
+        const inc = appState.data.months[appState.currentMonthKey].incomes.find(i => i.id === id);
+        if (inc) {
+            document.querySelector("#add-income-modal h2").textContent = "Editar Entrada";
+            document.getElementById("inc-id").value = inc.id;
+            document.getElementById("inc-desc").value = inc.desc;
+            document.getElementById("inc-amount").value = inc.amount;
+            document.getElementById("inc-date").value = inc.date || "";
+            document.getElementById("delete-inc-btn").style.display = "inline-flex";
+        }
+    } else {
+        document.querySelector("#add-income-modal h2").textContent = "Nova Entrada";
+        document.getElementById("inc-id").value = "";
+        document.getElementById("inc-desc").value = "";
+        document.getElementById("inc-amount").value = "";
+        document.getElementById("inc-date").value = "";
+        document.getElementById("delete-inc-btn").style.display = "none";
+    }
+    
+    modal.classList.remove("hidden");
+};
+
+function handleAddIncomeSubmit(e) {
+    e.preventDefault();
+    const id = document.getElementById("inc-id").value;
+    const desc = document.getElementById("inc-desc").value.trim();
+    const amount = parseFloat(document.getElementById("inc-amount").value);
+    const date = document.getElementById("inc-date").value;
+    
+    if (!desc || isNaN(amount)) return;
+    
+    let incomes = appState.data.months[appState.currentMonthKey].incomes;
+    if(!incomes) incomes = [];
+
+    if (id) {
+        const inc = incomes.find(i => i.id === id);
+        if (inc) {
+            inc.desc = desc;
+            inc.amount = amount;
+            inc.date = date;
+        }
+    } else {
+        incomes.push({
+            id: "inc-" + Date.now() + Math.random().toString(36).substr(2, 4),
+            desc,
+            amount,
+            date,
+            received: false
+        });
+    }
+    
+    appState.data.months[appState.currentMonthKey].incomes = incomes;
+    saveStateToStorage();
+    document.getElementById("add-income-modal").classList.add("hidden");
+    renderApp();
 }
 
-function handleIncomeSubmit(e) {
-    e.preventDefault();
-    const val = parseFloat(document.getElementById("income-amount-input").value);
-    if (!isNaN(val)) {
-        appState.data.months[appState.currentMonthKey].income = val;
-        saveStateToStorage();
-        document.getElementById("income-modal").classList.add("hidden");
-        renderApp();
-    }
-}
+window.handleDeleteIncome = function() {
+    const id = document.getElementById("inc-id").value;
+    if (!id) return;
+    
+    const incomes = appState.data.months[appState.currentMonthKey].incomes;
+    appState.data.months[appState.currentMonthKey].incomes = incomes.filter(i => i.id !== id);
+    
+    saveStateToStorage();
+    document.getElementById("add-income-modal").classList.add("hidden");
+    renderApp();
+};
 
 // Funções de PIN removidas, substituídas pelo Login com Google
 
@@ -686,7 +816,7 @@ function executeMonthlyClosing() {
 
         appState.data.months[nextKey] = {
             label: nextLabel,
-            income: currentMonthData.income,
+            incomes: [], // Entradas do mês sempre começam vazias para o usuário preencher
             closed: false,
             transactions: nextTransactions
         };
