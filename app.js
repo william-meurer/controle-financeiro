@@ -631,6 +631,8 @@ window.openAddModal = function(defaultNature = "fixed") {
     document.getElementById("tx-nature").value = defaultNature;
     document.getElementById("tx-end-date").value = "";
     
+    document.getElementById("tx-nature-group").style.display = (defaultNature === "subscription") ? "none" : "block";
+    
     document.getElementById("tx-end-date-group").style.display = (defaultNature === "installment") ? "block" : "none";
     document.getElementById("delete-tx-btn").style.display = "none";
     document.getElementById("transaction-modal").classList.remove("hidden");
@@ -639,12 +641,14 @@ window.openEditModal = function(id) {
     const tx = appState.data.months[appState.currentMonthKey].transactions.find(t => t.id === id);
     if (!tx) return;
 
-    document.getElementById("modal-title").textContent = "Editar Lançamento";
+    document.getElementById("modal-title").textContent = tx.nature === "subscription" ? "Editar Assinatura" : "Editar Lançamento";
     document.getElementById("tx-id").value = tx.id;
     document.getElementById("tx-desc").value = tx.desc;
     document.getElementById("tx-amount").value = tx.amount;
     document.getElementById("tx-nature").value = tx.nature || "fixed";
     document.getElementById("tx-end-date").value = tx.endDate || "";
+    
+    document.getElementById("tx-nature-group").style.display = (tx.nature === "subscription") ? "none" : "block";
     
     document.getElementById("tx-end-date-group").style.display = (tx.nature === "installment") ? "block" : "none";
     document.getElementById("delete-tx-btn").style.display = "inline-flex";
