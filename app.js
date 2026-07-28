@@ -667,7 +667,7 @@ window.openAddIncomeModal = function(id = null) {
     if (id) {
         const inc = appState.data.months[appState.currentMonthKey].incomes.find(i => i.id === id);
         if (inc) {
-            document.querySelector("#add-income-modal h2").textContent = "Editar Entrada";
+            document.getElementById("income-modal-title").textContent = "Editar Entrada";
             document.getElementById("inc-id").value = inc.id;
             document.getElementById("inc-desc").value = inc.desc;
             document.getElementById("inc-amount").value = inc.amount;
@@ -675,7 +675,7 @@ window.openAddIncomeModal = function(id = null) {
             document.getElementById("delete-inc-btn").style.display = "inline-flex";
         }
     } else {
-        document.querySelector("#add-income-modal h2").textContent = "Nova Entrada";
+        document.getElementById("income-modal-title").textContent = "Nova Entrada";
         document.getElementById("inc-id").value = "";
         document.getElementById("inc-desc").value = "";
         document.getElementById("inc-amount").value = "";
