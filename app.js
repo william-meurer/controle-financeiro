@@ -317,7 +317,7 @@ function setupEventListeners() {
     document.getElementById("confirm-close-month-btn").addEventListener("click", executeMonthlyClosing);
     
     // Dynamic modal form fields
-    document.getElementById("tx-nature").addEventListener("change", (e) => {
+    document.getElementById("tx-nature-select").addEventListener("change", (e) => {
         document.getElementById("tx-end-date-group").style.display = (e.target.value === "installment") ? "block" : "none";
     });
 
@@ -628,7 +628,8 @@ window.openAddModal = function(defaultNature = "fixed") {
     document.getElementById("tx-id").value = "";
     document.getElementById("tx-desc").value = "";
     document.getElementById("tx-amount").value = "";
-    document.getElementById("tx-nature").value = defaultNature;
+    document.getElementById("tx-nature-hidden").value = defaultNature;
+    document.getElementById("tx-nature-select").value = defaultNature === "subscription" ? "fixed" : defaultNature;
     document.getElementById("tx-end-date").value = "";
     
     document.getElementById("tx-nature-group").style.display = (defaultNature === "subscription") ? "none" : "block";
@@ -645,7 +646,8 @@ window.openEditModal = function(id) {
     document.getElementById("tx-id").value = tx.id;
     document.getElementById("tx-desc").value = tx.desc;
     document.getElementById("tx-amount").value = tx.amount;
-    document.getElementById("tx-nature").value = tx.nature || "fixed";
+    document.getElementById("tx-nature-hidden").value = tx.nature || "fixed";
+    document.getElementById("tx-nature-select").value = tx.nature === "subscription" ? "fixed" : (tx.nature || "fixed");
     document.getElementById("tx-end-date").value = tx.endDate || "";
     
     document.getElementById("tx-nature-group").style.display = (tx.nature === "subscription") ? "none" : "block";
@@ -681,7 +683,12 @@ function handleTransactionSubmit(e) {
     const id = document.getElementById("tx-id").value;
     const desc = document.getElementById("tx-desc").value.trim();
     const amount = parseFloat(document.getElementById("tx-amount").value);
-    const nature = document.getElementById("tx-nature").value;
+    
+    let nature = document.getElementById("tx-nature-hidden").value;
+    if (nature !== "subscription") {
+        nature = document.getElementById("tx-nature-select").value;
+    }
+    
     const endDate = document.getElementById("tx-end-date").value;
 
     if (!desc || isNaN(amount)) return;

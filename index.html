@@ -232,12 +232,12 @@
                     </div>
                     <div class="form-group" id="tx-nature-group">
                         <label>Natureza</label>
-                        <select id="tx-nature">
+                        <select id="tx-nature-select">
                             <option value="fixed">Conta Fixa</option>
                             <option value="installment">Parcelamento</option>
-                            <option value="subscription" hidden>Assinatura / Débito</option>
                         </select>
                     </div>
+                    <input type="hidden" id="tx-nature-hidden">
                 </div>
                 <div class="form-group" id="tx-end-date-group">
                     <label>Data de Término (Opcional)</label>
@@ -384,6 +384,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-    <script src="app.js?v=3.0" defer></script>
+    <script src="app.js?v=4.0" defer></script>
 </body>
 </html>
