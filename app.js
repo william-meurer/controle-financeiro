@@ -8,26 +8,9 @@ const DEFAULT_INITIAL_DATA = {
     months: {
         "2026-07": {
             label: "Julho 2026",
-            income: 4893.00,
+            income: 0.00,
             closed: false,
-            transactions: [
-                { id: "tx-1", desc: "Aluguel + Seguro", amount: 1472.08, category: "Moradia", type: "Fixo", endDate: "", parcela: "", ok: true },
-                { id: "tx-2", desc: "Condomínio", amount: 404.94, category: "Moradia", type: "Fixo", endDate: "", parcela: "", ok: true },
-                { id: "tx-3", desc: "Empréstimo", amount: 529.33, category: "Parcelamentos", type: "Parcelado", endDate: "2027-11", parcela: "Fim: 11/2027", ok: false },
-                { id: "tx-4", desc: "Magalu 21x", amount: 443.72, category: "Parcelamentos", type: "Parcelado", endDate: "2027-06", parcela: "12/21 (Fim: 06/2027)", ok: false },
-                { id: "tx-5", desc: "Cartão SX", amount: 325.57, category: "Parcelamentos", type: "Parcelado", endDate: "2026-10", parcela: "Fim: 10/2026", ok: true },
-                { id: "tx-6", desc: "Nubank PJ", amount: 184.85, category: "Parcelamentos", type: "Parcelado", endDate: "2026-09", parcela: "Fim: 09/2026", ok: true },
-                { id: "tx-7", desc: "Claro", amount: 129.12, category: "Despesas Fixas", type: "Fixo", endDate: "", parcela: "", ok: true },
-                { id: "tx-8", desc: "MEI", amount: 86.90, category: "Despesas Fixas", type: "Fixo", endDate: "", parcela: "", ok: true },
-                { id: "tx-9", desc: "Terreiro", amount: 50.00, category: "Despesas Fixas", type: "Fixo", endDate: "", parcela: "", ok: true },
-                
-                { id: "tx-10", desc: "Adobe", amount: 90.00, category: "Débitos Automáticos", type: "Débito Automático", endDate: "", parcela: "", ok: true },
-                { id: "tx-11", desc: "IR (Imposto de Renda)", amount: 61.00, category: "Débitos Automáticos", type: "Débito Automático", endDate: "", parcela: "", ok: true },
-                { id: "tx-12", desc: "YouTube", amount: 53.90, category: "Débitos Automáticos", type: "Débito Automático", endDate: "", parcela: "", ok: true },
-                { id: "tx-13", desc: "Spotify", amount: 34.90, category: "Débitos Automáticos", type: "Débito Automático", endDate: "", parcela: "", ok: true },
-                { id: "tx-14", desc: "Prime", amount: 19.90, category: "Débitos Automáticos", type: "Débito Automático", endDate: "", parcela: "", ok: true },
-                { id: "tx-15", desc: "Google One", amount: 10.00, category: "Débitos Automáticos", type: "Débito Automático", endDate: "", parcela: "", ok: true }
-            ]
+            transactions: []
         }
     }
 };
