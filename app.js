@@ -110,6 +110,10 @@ function initIcons() {
 
 // 1. AUTHENTICATION & LOGIN
 function setupAuth() {
+    // Configura para NÃO salvar a sessão, deslogando a cada refresh ou aba fechada
+    auth.setPersistence(firebase.auth.Auth.Persistence.NONE)
+        .catch(error => console.error("Erro na persistência:", error));
+
     const loginBtn = document.getElementById("login-btn");
     const loginError = document.getElementById("login-error");
     const logoutBtn = document.getElementById("logout-btn");
@@ -275,11 +279,26 @@ function setupEventListeners() {
         document.getElementById("tx-parcela-group").style.display = (e.target.value === "Parcelado" || e.target.value === "Fixo") ? "flex" : "none";
     });
 
-    // Export / Import
     document.getElementById("export-json-btn").addEventListener("click", exportBackupJSON);
     document.getElementById("export-csv-btn").addEventListener("click", exportCurrentMonthCSV);
     document.getElementById("import-json-file").addEventListener("change", importBackupJSON);
     document.getElementById("btn-confirm-delete").addEventListener("click", executeDeleteTransaction);
+
+    // Alertar antes de recarregar se houver algum modal aberto (edição em andamento)
+    window.addEventListener('beforeunload', (e) => {
+        const txModal = document.getElementById("transaction-modal");
+        const incModal = document.getElementById("income-modal");
+        const notModal = document.getElementById("notes-modal");
+        
+        const isEditing = (txModal && !txModal.classList.contains("hidden")) || 
+                          (incModal && !incModal.classList.contains("hidden")) || 
+                          (notModal && !notModal.classList.contains("hidden"));
+        
+        if (isEditing) {
+            e.preventDefault();
+            e.returnValue = ''; // Faz o navegador mostrar o popup de "Deseja sair?"
+        }
+    });
 }
 
 function navigateMonth(direction) {
