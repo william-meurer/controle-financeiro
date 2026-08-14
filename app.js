@@ -248,6 +248,12 @@ function migrateToNatureField() {
         const mData = appState.data.months[monthKey];
         if (!mData.transactions) continue;
         mData.transactions.forEach(tx => {
+            // Forçar iCloud como assinatura
+            if (tx.desc && tx.desc.toLowerCase().includes('icloud') && tx.nature !== 'subscription') {
+                tx.nature = 'subscription';
+                migrated = true;
+            }
+
             if (tx.nature) return; // Already migrated
             migrated = true;
             if (tx.type === "Débito Automático" || tx.category === "Débitos Automáticos") {
@@ -863,9 +869,16 @@ function executeMonthlyClosing() {
             });
         });
 
+        // Copiar entradas do mês anterior, resetando o status de recebimento
+        const nextIncomes = (currentMonthData.incomes || []).map(inc => ({
+            ...inc,
+            id: "inc-" + Date.now() + Math.random().toString(36).substr(2, 4),
+            received: false
+        }));
+
         appState.data.months[nextKey] = {
             label: nextLabel,
-            incomes: [],
+            incomes: nextIncomes,
             closed: false,
             transactions: nextTransactions
         };

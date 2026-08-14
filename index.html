@@ -99,8 +99,15 @@
             <!-- 2. ENTRADAS (antes era "Roadmap de Entradas") -->
             <div class="bento-item table-bento glass-card section-entradas" style="background: var(--bg-card);">
                 <div class="section-header">
-                    <h2><i data-lucide="arrow-up-circle" class="text-teal"></i> Entradas</h2>
-                    <span class="section-subtitle" id="incomes-count">0</span>
+                    <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+                        <h2><i data-lucide="arrow-up-circle" class="text-teal"></i> Entradas</h2>
+                        <div style="display: flex; align-items: center; gap: 1rem; margin-left: auto;">
+                            <span class="section-subtitle" id="incomes-count">0</span>
+                            <button class="btn btn-small btn-outline" onclick="openAddIncomeModal()">
+                                <i data-lucide="plus"></i> Nova Entrada
+                            </button>
+                        </div>
+                    </div>
                 </div>
                 <div class="table-container">
                     <table class="data-table" id="incomes-table">
@@ -298,6 +305,7 @@
                 <ul class="magic-list mt-3">
                     <li><i data-lucide="check"></i> <span>Arquiva o histórico de <strong id="closing-current-month-name">Julho 2026</strong>.</span></li>
                     <li><i data-lucide="check"></i> <span>Cria <strong id="closing-next-month-name">Agosto 2026</strong> copiando os gastos fixos.</span></li>
+                    <li><i data-lucide="check"></i> <span>Copia as <strong>entradas</strong> do mês atual (pendentes de recebimento).</span></li>
                     <li><i data-lucide="check"></i> <span>Avança parcelas e remove dívidas vencidas.</span></li>
                 </ul>
             </div>
