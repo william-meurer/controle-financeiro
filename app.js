@@ -220,7 +220,11 @@ async function loadStateFromStorage() {
             const didMigrateNature = migrateToNatureField();
             if (didMigrateNature) await saveStateToStorage();
 
-            if (!appState.data.months[appState.currentMonthKey]) {
+            // Restaurar o último mês acessado
+            const savedMonthKey = localStorage.getItem("antigravity_finance_pro_month");
+            if (savedMonthKey && appState.data.months[savedMonthKey]) {
+                appState.currentMonthKey = savedMonthKey;
+            } else {
                 const keys = Object.keys(appState.data.months).sort();
                 appState.currentMonthKey = keys[keys.length - 1] || "2026-07";
             }
@@ -355,6 +359,7 @@ function navigateMonth(direction) {
     const newIdx = idx + direction;
     if (newIdx >= 0 && newIdx < keys.length) {
         appState.currentMonthKey = keys[newIdx];
+        localStorage.setItem("antigravity_finance_pro_month", appState.currentMonthKey);
         renderApp();
     } else {
         showToast("Não há registros adicionais.", "info");
@@ -885,6 +890,7 @@ function executeMonthlyClosing() {
     }
 
     appState.currentMonthKey = nextKey;
+    localStorage.setItem("antigravity_finance_pro_month", appState.currentMonthKey);
     saveStateToStorage();
     document.getElementById("close-month-modal").classList.add("hidden");
     renderApp();
