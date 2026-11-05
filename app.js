@@ -1304,8 +1304,21 @@ async function importarArquivos(files) {
     const existentes = new Set(potes.gastos.map(g => g.chave).filter(Boolean));
     const reconhecidos = [], novos = [], naoLidos = [];
     let repetidos = 0, ignorados = 0;
+    const regrasNovas = {};
     for (const file of files) {
         try {
+            if (/\.json$/i.test(file.name) || file.type === "application/json") {
+                const pacote = JSON.parse(await file.text());
+                if (!pacote || !Array.isArray(pacote.gastos)) { naoLidos.push(file.name); continue; }
+                Object.assign(regrasNovas, pacote.regras || {});
+                for (const g of pacote.gastos) {
+                    if (!g || !g.chave || !g.pote || !(g.valor > 0)) continue;
+                    if (existentes.has(g.chave)) { repetidos++; continue; }
+                    existentes.add(g.chave);
+                    reconhecidos.push({ ...g });
+                }
+                continue;
+            }
             const { tipo, itens } = await lerExtrato(file);
             if (!tipo) { naoLidos.push(file.name); continue; }
             const contagem = {};
@@ -1326,7 +1339,7 @@ async function importarArquivos(files) {
             naoLidos.push(file.name);
         }
     }
-    importacaoPendente = { reconhecidos, novos, escolhas: {}, repetidos, ignorados, naoLidos };
+    importacaoPendente = { reconhecidos, novos, escolhas: {}, regrasNovas, repetidos, ignorados, naoLidos };
     abrirModalImportacao();
 }
 
@@ -1364,7 +1377,7 @@ function salvarImportacao() {
     const imp = importacaoPendente;
     if (!imp) return;
     const potes = garantirPotes();
-    potes.regras = potes.regras || {};
+    potes.regras = Object.assign(potes.regras || {}, imp.regrasNovas || {});
     Object.entries(imp.escolhas).forEach(([lugar, pote]) => { if (lugar) potes.regras[lugar] = pote; });
     const novo = (it, pote) => ({ id: "gst-" + Date.now() + Math.random().toString(36).substr(2, 5), pote, valor: it.valor, desc: it.desc, data: it.data, chave: it.chave, fonte: it.fonte });
     let n = 0;
