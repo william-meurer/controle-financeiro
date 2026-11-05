@@ -311,6 +311,9 @@ function setupEventListeners() {
         }
     });
 
+    setupPotesListeners();
+    setupImportListeners();
+
     // Modals Close
     document.querySelectorAll(".close-modal").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -454,6 +457,7 @@ function renderApp() {
     // Tables & Timeline
     renderBentoTables(currentMonthData.transactions);
     renderIncomesRoadmap(incomes);
+    renderPotes();
     
     initIcons();
 }
@@ -946,3 +950,440 @@ function importBackupJSON(e) {
 }
 
 
+
+// ==========================================================================
+// POTES DO MÊS — orçamento por potes, ciclo do dia 5 ao dia 4 do mês seguinte
+// ==========================================================================
+const POTES_PADRAO = [
+    { id: "moradia",     nome: "Moradia",     teto: 2000, cor: "#2a78d6", desc: "aluguel + condomínio" },
+    { id: "alimentacao", nome: "Alimentação", teto: 1000, cor: "#eb6834", desc: "mercado 750 + rua 250" },
+    { id: "guardar",     nome: "Guardar",     teto: 650,  cor: "#1baf7a", desc: "sai no dia 5, primeiro" },
+    { id: "contas",      nome: "Contas",      teto: 500,  cor: "#eda100", desc: "luz, internet, MEI, IR, terreiro" },
+    { id: "cartao",      nome: "Cartão",      teto: 350,  cor: "#e87ba4", desc: "assinaturas, 99, farmácia" },
+    { id: "lazer",       nome: "Lazer",       teto: 300,  cor: "#008300", desc: "bar, saídas, delivery" },
+    { id: "compras",     nome: "Compras",     teto: 200,  cor: "#6250d6", desc: "roupa, casa, imprevistos" }
+];
+const MESES_CURTOS = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+let poteSelecionado = null;
+
+function garantirPotes() {
+    if (!appState.data.potes) appState.data.potes = { config: JSON.parse(JSON.stringify(POTES_PADRAO)), gastos: [] };
+    if (!appState.data.potes.gastos) appState.data.potes.gastos = [];
+    return appState.data.potes;
+}
+
+function cicloDoMes(monthKey) {
+    const [y, m] = monthKey.split("-").map(Number);
+    const ny = m === 12 ? y + 1 : y, nm = m === 12 ? 1 : m + 1;
+    return {
+        inicio: `${y}-${String(m).padStart(2, "0")}-05`,
+        fim: `${ny}-${String(nm).padStart(2, "0")}-05`,
+        label: `5/${MESES_CURTOS[m - 1]} a 4/${MESES_CURTOS[nm - 1]}`
+    };
+}
+
+function hojeISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function gastosDoCiclo(monthKey) {
+    const c = cicloDoMes(monthKey);
+    return garantirPotes().gastos.filter(g => g.data >= c.inicio && g.data < c.fim);
+}
+
+function escaparHTML(s) {
+    return String(s || "").replace(/[&<>"']/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+}
+
+function renderPotes() {
+    const grid = document.getElementById("potes-grid");
+    if (!grid) return;
+    const potes = garantirPotes();
+    const ciclo = cicloDoMes(appState.currentMonthKey);
+    const gastos = gastosDoCiclo(appState.currentMonthKey);
+
+    document.getElementById("potes-periodo").textContent = ciclo.label;
+    const totalGasto = gastos.reduce((a, g) => a + Number(g.valor), 0);
+    const totalTeto = potes.config.reduce((a, p) => a + Number(p.teto), 0);
+    document.getElementById("potes-total").textContent = `${formatCurrency(totalGasto)} de ${formatCurrency(totalTeto)}`;
+
+    document.getElementById("potes-barra").innerHTML = potes.config
+        .map(p => `<span style="flex:${p.teto};background:${p.cor}"></span>`).join("");
+
+    grid.innerHTML = potes.config.map(p => {
+        const gasto = gastos.filter(g => g.pote === p.id).reduce((a, g) => a + Number(g.valor), 0);
+        const resto = p.teto - gasto;
+        const pct = Math.min(100, p.teto > 0 ? (gasto / p.teto) * 100 : 0);
+        const estourou = resto < 0;
+        return `
+            <button type="button" class="pote-card" data-pote="${p.id}">
+                <span class="pote-topo"><span class="pote-cor" style="background:${p.cor}"></span>${escaparHTML(p.nome)}</span>
+                <strong class="pote-gasto">${formatCurrency(gasto)}</strong>
+                <span class="pote-teto">de ${formatCurrency(p.teto)}</span>
+                <span class="pote-progresso"><span style="width:${pct}%;background:${estourou ? "var(--rose)" : p.cor}"></span></span>
+                <span class="pote-resto ${estourou ? "text-rose" : ""}">${estourou ? "passou " + formatCurrency(-resto) : "falta " + formatCurrency(resto)}</span>
+            </button>`;
+    }).join("");
+
+    grid.querySelectorAll(".pote-card").forEach(card => {
+        card.addEventListener("click", () => abrirDetalhePote(card.dataset.pote));
+    });
+}
+
+function abrirModalGasto(poteId) {
+    const potes = garantirPotes();
+    poteSelecionado = poteId || null;
+    document.getElementById("gasto-form").reset();
+    document.getElementById("gasto-data").value = hojeISO();
+    document.getElementById("gasto-pote-erro").classList.add("hidden");
+    const chips = document.getElementById("gasto-potes");
+    chips.innerHTML = potes.config.map(p =>
+        `<button type="button" class="pote-chip ${p.id === poteSelecionado ? "ativo" : ""}" data-pote="${p.id}">
+            <span class="pote-cor" style="background:${p.cor}"></span>${escaparHTML(p.nome)}
+        </button>`).join("");
+    chips.querySelectorAll(".pote-chip").forEach(chip => {
+        chip.addEventListener("click", () => {
+            poteSelecionado = chip.dataset.pote;
+            chips.querySelectorAll(".pote-chip").forEach(c => c.classList.toggle("ativo", c === chip));
+            document.getElementById("gasto-pote-erro").classList.add("hidden");
+        });
+    });
+    document.querySelectorAll(".modal-overlay").forEach(m => m.classList.add("hidden"));
+    document.getElementById("gasto-modal").classList.remove("hidden");
+    setTimeout(() => document.getElementById("gasto-valor").focus(), 50);
+}
+
+function handleGastoSubmit(e) {
+    e.preventDefault();
+    const valor = parseFloat(document.getElementById("gasto-valor").value);
+    const data = document.getElementById("gasto-data").value;
+    if (!poteSelecionado) {
+        document.getElementById("gasto-pote-erro").classList.remove("hidden");
+        return;
+    }
+    if (isNaN(valor) || valor <= 0 || !data) return;
+    garantirPotes().gastos.push({
+        id: "gst-" + Date.now() + Math.random().toString(36).substr(2, 4),
+        pote: poteSelecionado,
+        valor,
+        desc: document.getElementById("gasto-desc").value.trim(),
+        data
+    });
+    saveStateToStorage();
+    document.getElementById("gasto-modal").classList.add("hidden");
+    showToast("Gasto lançado.", "success");
+    renderApp();
+}
+
+function abrirDetalhePote(poteId) {
+    const pote = garantirPotes().config.find(p => p.id === poteId);
+    if (!pote) return;
+    poteSelecionado = poteId;
+    document.getElementById("pote-detalhe-titulo").textContent = pote.nome;
+    renderListaPote(poteId);
+    document.getElementById("pote-detalhe-modal").classList.remove("hidden");
+}
+
+function renderListaPote(poteId) {
+    const lista = document.getElementById("pote-detalhe-lista");
+    const gastos = gastosDoCiclo(appState.currentMonthKey)
+        .filter(g => g.pote === poteId)
+        .sort((a, b) => b.data.localeCompare(a.data));
+    if (gastos.length === 0) {
+        lista.innerHTML = `<p class="pote-vazio">Nenhum gasto neste ciclo.</p>`;
+        return;
+    }
+    lista.innerHTML = gastos.map(g => {
+        const [, mm, dd] = g.data.split("-");
+        return `<div class="pote-item">
+            <span class="pote-item-data">${dd}/${mm}</span>
+            <span class="pote-item-desc">${escaparHTML(g.desc) || "—"}</span>
+            <strong>${formatCurrency(g.valor)}</strong>
+            <button type="button" class="icon-btn-small text-rose" data-gasto="${g.id}" title="Excluir"><i data-lucide="trash-2"></i></button>
+        </div>`;
+    }).join("");
+    lista.querySelectorAll("[data-gasto]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const potes = garantirPotes();
+            potes.gastos = potes.gastos.filter(g => g.id !== btn.dataset.gasto);
+            saveStateToStorage();
+            renderListaPote(poteId);
+            renderApp();
+        });
+    });
+    initIcons();
+}
+
+function setupPotesListeners() {
+    document.getElementById("add-gasto-btn")?.addEventListener("click", () => abrirModalGasto());
+    document.getElementById("gasto-form")?.addEventListener("submit", handleGastoSubmit);
+    document.getElementById("pote-detalhe-lancar")?.addEventListener("click", () => abrirModalGasto(poteSelecionado));
+}
+
+// ==========================================================================
+// IMPORTAÇÃO DE EXTRATOS EM PDF — sem IA: lê o texto e separa por regras
+// ==========================================================================
+const PDFJS_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+const PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const MESES_PDF = { JAN: 1, FEV: 2, MAR: 3, ABR: 4, MAI: 5, JUN: 6, JUL: 7, AGO: 8, SET: 9, OUT: 10, NOV: 11, DEZ: 12 };
+const RE_VALOR = /^-?[\d.]+,\d{2}$/;
+const RE_DDMM = /^\d{2}\/\d{2}$/;
+let importacaoPendente = null;
+
+// Regras: nome do lugar → pote. "ignorar" = não é gasto do mês (dívida, pagamento de fatura, transferência).
+const REGRAS_POTES = [
+    ["guardar", /APLICACAO RDB|APLICACAO/],
+    ["ignorar", /RESGATE DE EMPRESTIMO|PAGAMENTO DE FATURA|PARC SALDO DE FATURA|PAGAMENTO CARTAO CREDITO|PREST\.? DE EMPREST|LUIZA CRED|MAGALUPAY|REMUNERACAO APLICACAO/],
+    ["moradia", /PREDILAR|POTTRATZ/],
+    ["contas", /CLARO|RECEITA FEDERAL|DEB AUT\.? RECEITA|DISTRIBUIDORA DE GAS|GASIMA|JUROS SALDO|IOF|RGE|CPFL|CEEE|CORSAN/],
+    ["cartao", /YOUTUBE|SPOTIFY|APPLE|ADOBE|GOOGLE ONE|ANTHROPIC|WELLHUB|GYMPASS|HOSTINGER|CLOUDFLARE|KIWIFY|MANUAL SAUDE|EC \*UNICO|IFOOD CLUB|ANUIDADE|^99|99NEGOCIA|POSTO|IMPLYRENTAL|IMEC|PANVEL|FARMACIA|PHARMACIA|DERMATOLOGE|GRANADO|ULTRAMED/],
+    ["lazer", /AIQFOME|IFD\*|IFOOD|BOX ?TAP ?HOUSE|GAVETA|POCKET|HEILIGE|FLAMULA|ZIG\*|CHOPERIA|CONFRARIA|BARBUDAS|\bBAR\b|PUB|HBIER|OKTOBER|BEBID|SYMPLA|FERVO|DINGOBELLS|COPPA|ELEVEN|SUSTENIDO|OPINIAO PRODUTORA|PROST|TCHE BARBARIDADE|RECOLETA|CINE|BOTECO|MARECHALBAR/],
+    ["alimentacao", /OSMAR NICOLINI|MILLER|ZAFFARI|MERCADO|EMPORIO|MULLER ALIMENTOS|MERC E LANC|TWCONVENIENCIA|FORT \d|PADARIA|PANIFICADORA|NATURVIDA|CUCAS|CAFE|CAFETERIA|PARAGEM|POKE|CANTINA|LANCHERIA|TUTU|NAPULE|PIZZ|AGRIDOCE|PRANNA|PARRILLA|CHURRASC|SUSHI|BURGER|BURGUER|DELIZE|BACIO|SORVET|COFFEE|LANCHES|PASTEL|GALETERIA|RESTAURANT|GASTRONOMI|SORELLA|BIANCHIN|TAQUAREIRA|GELLADA|MISTER BEAN|KOMILAO|CHEF|BELLA GULA|CASA DUARTE|LEGEND|HOTDOG|LATTE|SABORES|MORANGO|BRAS\d+ COMERCIO/],
+    ["compras", /PASSARELA|RIACHUELO|ADIDAS|H&M|INDITEX|JM SPORTS|SAAVEDRA|ENJOEI|WALENTE|HAVAN|NUVEM|NUV\*|BRECHO|CELLTECH|AMAZON|ROSA NORTE|NATURA|COSMETI|COMERCIO DE VARI|THCOMERCIO|ILUMINURA|BRINCASA|RENNER|FASHION|JOIAS|CHINA SHOP|BAZAR|PAPEL|ART BORDADO|DANA PRESENTES|MEYER|UFFA|CASAGOLDEN|NOWDAYS|AIRBNB|ARTY CASA|ACHADINHOS|FLORES/]
+];
+
+function semAcento(s) {
+    return String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase();
+}
+
+// Chave curta do lugar, usada para lembrar a escolha do pote
+function chaveDoLugar(desc) {
+    const base = semAcento(String(desc || "").split(" - ")[0]);
+    const limpa = base.replace(/[•*\d./()-]+/g, " ").replace(/\b(LTDA|ME|EIRELI|S\s?A)\b/g, " ").replace(/\s+/g, " ").trim();
+    return limpa.split(" ").slice(0, 3).join(" ") || base.trim().slice(0, 30);
+}
+
+function poteDoLugar(desc) {
+    const regras = garantirPotes().regras || {};
+    const chave = chaveDoLugar(desc);
+    if (chave && regras[chave]) return regras[chave];
+    const d = semAcento(desc);
+    for (const [pote, re] of REGRAS_POTES) if (re.test(d)) return pote;
+    return null;
+}
+
+function carregarPdfJs() {
+    if (window.pdfjsLib) return Promise.resolve(window.pdfjsLib);
+    return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = PDFJS_URL;
+        s.onload = () => { window.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER; resolve(window.pdfjsLib); };
+        s.onerror = () => reject(new Error("Não consegui carregar o leitor de PDF. Confira a internet."));
+        document.head.appendChild(s);
+    });
+}
+
+// Lê o PDF e devolve as linhas, cada uma como lista de "blocos" de texto (colunas separadas por espaço grande)
+async function lerLinhasPDF(file) {
+    const pdfjs = await carregarPdfJs();
+    const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+    const linhas = [];
+    for (let p = 1; p <= pdf.numPages; p++) {
+        const page = await pdf.getPage(p);
+        const content = await page.getTextContent();
+        const itens = content.items
+            .filter(i => i.str && i.str.trim())
+            .map(i => ({ x: i.transform[4], y: i.transform[5], w: i.width, h: Math.abs(i.transform[3]) || i.height || 8, s: i.str }));
+        itens.sort((a, b) => b.y - a.y || a.x - b.x);
+        const grupos = [];
+        for (const it of itens) {
+            const g = grupos.find(g => Math.abs(g.y - it.y) < Math.max(2, it.h * 0.45));
+            if (g) g.itens.push(it); else grupos.push({ y: it.y, itens: [it] });
+        }
+        grupos.sort((a, b) => b.y - a.y);
+        for (const g of grupos) {
+            g.itens.sort((a, b) => a.x - b.x);
+            const blocos = [];
+            let ant = null;
+            for (const it of g.itens) {
+                const gap = ant ? it.x - (ant.x + ant.w) : Infinity;
+                if (!ant || gap > Math.max(ant.h, it.h) * 0.9) blocos.push(it.s.trim());
+                else blocos[blocos.length - 1] += (gap > ant.h * 0.12 ? " " : "") + it.s.trim();
+                ant = it;
+            }
+            linhas.push(blocos.map(b => b.replace(/\s+/g, " ").trim()).filter(Boolean));
+        }
+    }
+    return linhas;
+}
+
+const numBR = s => parseFloat(String(s).replace(/[R$\s]/g, "").replace(/\./g, "").replace(",", "."));
+
+function lerNubank(linhas) {
+    const out = [];
+    let data = null;
+    const tiposGasto = /^(Compra no débito|Transferência enviada pelo Pix|Pagamento de boleto efetuado|Débito em conta|Pagamento de fatura|Aplicação RDB|Resgate de empréstimo)/;
+    for (const t of linhas) {
+        const m = (t[0] || "").match(/^(\d{2}) ([A-Z]{3}) (\d{4})$/);
+        if (m && MESES_PDF[m[2]]) { data = `${m[3]}-${String(MESES_PDF[m[2]]).padStart(2, "0")}-${m[1]}`; continue; }
+        if (!data || !tiposGasto.test(t[0] || "")) continue;
+        const valor = t[t.length - 1];
+        if (!RE_VALOR.test(valor)) continue;
+        const desc = t.slice(1, -1).join(" ") || t[0];
+        out.push({ data, desc, valor: numBR(valor) });
+    }
+    return out;
+}
+
+function lerSantanderConta(linhas) {
+    const out = [];
+    for (let i = 0; i < linhas.length; i++) {
+        const t = linhas[i];
+        const m = (t[0] || "").match(/^(\d{2})\/(\d{2})\/(\d{4})/);
+        if (!m) continue;
+        const resto = t.join(" ").replace(/^\d{2}\/\d{2}\/\d{4}\s*/, "");
+        const vm = resto.match(/(-?)R\$ ?([\d.]+,\d{2})/);
+        if (!vm || vm[1] !== "-") continue;
+        const meio = resto.slice(0, vm.index).trim();
+        const antes = meio || (linhas[i - 1] || []).join(" ");
+        const depois = (linhas[i + 1] || []).join(" ");
+        const proximaEhData = /^\d{2}\/\d{2}\/\d{4}/.test(depois);
+        let desc = antes;
+        if (!proximaEhData && depois && !/^(Data|DETALHE|Terça|Segunda|Quarta|Quinta|Sexta|Sábado|Domingo)/.test(depois)) {
+            desc = /Pix|Compra cartao/i.test(antes) ? `${antes} ${depois}` : `${antes} · ${depois}`;
+        }
+        out.push({ data: `${m[3]}-${m[2]}-${m[1]}`, desc: desc.replace(/^(Pix enviado|Compra cartao deb mc)\s*/i, ""), valor: numBR(vm[2]) });
+    }
+    return out;
+}
+
+function lerFaturaSantander(linhas) {
+    const texto = linhas.map(t => t.join("  ")).join("\n");
+    const vm = texto.match(/Vencimento[\s\S]{0,300}?(\d{2})\/(\d{2})\/(\d{4})/);
+    if (!vm) return [];
+    const venc = new Date(Number(vm[3]), Number(vm[2]) - 1, Number(vm[1]));
+    const fechamento = new Date(venc.getTime() - 9 * 86400000);
+    const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const out = [];
+    let dentro = false;
+    for (const linha of linhas) {
+        if (linha.some(b => /Detalhamento da Fatura/i.test(b))) { dentro = true; continue; }
+        if (!dentro) continue;
+        const t = linha.filter(b => !/^\d$/.test(b) && b !== "@");
+        let i = 0;
+        while (i < t.length) {
+            let dd = null, desc = null;
+            const m = t[i].match(/^(\d{2}\/\d{2}) (\S.*)$/);
+            if (m) { dd = m[1]; desc = m[2]; i++; }
+            else if (RE_DDMM.test(t[i]) && t[i + 1] && !RE_VALOR.test(t[i + 1]) && !RE_DDMM.test(t[i + 1])) { dd = t[i]; desc = t[i + 1]; i += 2; }
+            else { i++; continue; }
+            let parcela = null;
+            while (i < t.length && !RE_VALOR.test(t[i]) && !RE_DDMM.test(t[i]) && !/^\d{2}\/\d{2} /.test(t[i])) { desc += " " + t[i]; i++; }
+            if (i < t.length && RE_DDMM.test(t[i]) && RE_VALOR.test(t[i + 1] || "")) { parcela = t[i]; i++; }
+            if (i >= t.length || !RE_VALOR.test(t[i])) continue;
+            const valor = numBR(t[i]); i++;
+            if (valor <= 0) continue;
+            const [d, mm] = dd.split("/").map(Number);
+            let ano = venc.getFullYear();
+            if (mm > venc.getMonth() + 1) ano -= 1;
+            let data = `${ano}-${String(mm).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+            const nParc = parcela ? Number(parcela.split("/")[0]) : 1;
+            if (nParc > 1) data = iso(fechamento);
+            out.push({ data, desc: desc.trim() + (parcela ? ` (${parcela})` : ""), valor });
+        }
+    }
+    return out;
+}
+
+async function lerExtrato(file) {
+    const linhas = await lerLinhasPDF(file);
+    const texto = linhas.map(t => t.join(" ")).join("\n");
+    let tipo, itens;
+    if (/Detalhamento da Fatura/i.test(texto)) { tipo = "fatura"; itens = lerFaturaSantander(linhas); }
+    else if (/EXTRATO DE CONTA/i.test(texto)) { tipo = "santander"; itens = lerSantanderConta(linhas); }
+    else if (/Movimentações/i.test(texto) && /Saldo final/i.test(texto)) { tipo = "nubank"; itens = lerNubank(linhas); }
+    else return { tipo: null, itens: [] };
+    return { tipo, itens: itens.map(x => ({ ...x, fonte: tipo })) };
+}
+
+async function importarArquivos(files) {
+    if (!files || !files.length) return;
+    showToast("Lendo os arquivos…", "info");
+    const potes = garantirPotes();
+    const existentes = new Set(potes.gastos.map(g => g.chave).filter(Boolean));
+    const reconhecidos = [], novos = [], naoLidos = [];
+    let repetidos = 0, ignorados = 0;
+    for (const file of files) {
+        try {
+            const { tipo, itens } = await lerExtrato(file);
+            if (!tipo) { naoLidos.push(file.name); continue; }
+            const contagem = {};
+            for (const it of itens) {
+                const base = `${it.fonte}|${it.data}|${semAcento(it.desc)}|${it.valor.toFixed(2)}`;
+                contagem[base] = (contagem[base] || 0) + 1;
+                const chave = `${base}|${contagem[base]}`;
+                if (existentes.has(chave)) { repetidos++; continue; }
+                existentes.add(chave);
+                const item = { ...it, chave, lugar: chaveDoLugar(it.desc) };
+                const pote = poteDoLugar(it.desc);
+                if (pote === "ignorar") ignorados++;
+                else if (pote) reconhecidos.push({ ...item, pote });
+                else novos.push(item);
+            }
+        } catch (e) {
+            console.error(e);
+            naoLidos.push(file.name);
+        }
+    }
+    importacaoPendente = { reconhecidos, novos, escolhas: {}, repetidos, ignorados, naoLidos };
+    abrirModalImportacao();
+}
+
+function abrirModalImportacao() {
+    const imp = importacaoPendente;
+    const resumo = document.getElementById("import-resumo");
+    const partes = [`<strong>${imp.reconhecidos.length}</strong> gastos já separados nos potes`];
+    if (imp.repetidos) partes.push(`${imp.repetidos} já importados antes`);
+    if (imp.ignorados) partes.push(`${imp.ignorados} que não são gasto do mês (fatura, dívida, transferência)`);
+    resumo.innerHTML = partes.map(p => `<li>${p}</li>`).join("") +
+        (imp.naoLidos.length ? `<li class="text-rose">Não consegui ler: ${imp.naoLidos.map(escaparHTML).join(", ")}</li>` : "");
+
+    const grupos = {};
+    imp.novos.forEach(n => { (grupos[n.lugar] = grupos[n.lugar] || { lugar: n.lugar, exemplo: String(n.desc).split(" - ")[0], total: 0, qtd: 0 }); grupos[n.lugar].total += n.valor; grupos[n.lugar].qtd++; });
+    const lista = document.getElementById("import-novos");
+    const opcoes = [...garantirPotes().config, { id: "ignorar", nome: "Ignorar", cor: "var(--text-dim)" }];
+    const gs = Object.values(grupos).sort((a, b) => b.total - a.total);
+    document.getElementById("import-novos-titulo").textContent = gs.length ? `${gs.length} lugares novos: escolha o pote` : "Nenhum lugar novo.";
+    lista.innerHTML = gs.map(g => `
+        <div class="import-novo" data-lugar="${escaparHTML(g.lugar)}">
+            <div class="import-novo-topo"><span>${escaparHTML(g.exemplo)}</span><strong>${formatCurrency(g.total)}${g.qtd > 1 ? ` · ${g.qtd}x` : ""}</strong></div>
+            <div class="potes-chips">${opcoes.map(p => `<button type="button" class="pote-chip" data-pote="${p.id}"><span class="pote-cor" style="background:${p.cor}"></span>${escaparHTML(p.nome)}</button>`).join("")}</div>
+        </div>`).join("");
+    lista.querySelectorAll(".import-novo").forEach(row => {
+        row.querySelectorAll(".pote-chip").forEach(chip => chip.addEventListener("click", () => {
+            imp.escolhas[row.dataset.lugar] = chip.dataset.pote;
+            row.querySelectorAll(".pote-chip").forEach(c => c.classList.toggle("ativo", c === chip));
+        }));
+    });
+    document.querySelectorAll(".modal-overlay").forEach(m => m.classList.add("hidden"));
+    document.getElementById("import-modal").classList.remove("hidden");
+}
+
+function salvarImportacao() {
+    const imp = importacaoPendente;
+    if (!imp) return;
+    const potes = garantirPotes();
+    potes.regras = potes.regras || {};
+    Object.entries(imp.escolhas).forEach(([lugar, pote]) => { if (lugar) potes.regras[lugar] = pote; });
+    const novo = (it, pote) => ({ id: "gst-" + Date.now() + Math.random().toString(36).substr(2, 5), pote, valor: it.valor, desc: it.desc, data: it.data, chave: it.chave, fonte: it.fonte });
+    let n = 0;
+    imp.reconhecidos.forEach(it => { potes.gastos.push(novo(it, it.pote)); n++; });
+    imp.novos.forEach(it => {
+        const pote = imp.escolhas[it.lugar];
+        if (pote && pote !== "ignorar") { potes.gastos.push(novo(it, pote)); n++; }
+    });
+    const pulados = imp.novos.filter(it => !imp.escolhas[it.lugar]).length;
+    importacaoPendente = null;
+    saveStateToStorage();
+    document.getElementById("import-modal").classList.add("hidden");
+    showToast(`${n} gastos importados.` + (pulados ? ` ${pulados} sem pote ficaram de fora.` : ""), "success");
+    renderApp();
+}
+
+function setupImportListeners() {
+    const input = document.getElementById("import-file-input");
+    document.getElementById("import-btn")?.addEventListener("click", () => input.click());
+    input?.addEventListener("change", async () => { await importarArquivos([...input.files]); input.value = ""; });
+    document.getElementById("import-salvar")?.addEventListener("click", salvarImportacao);
+}

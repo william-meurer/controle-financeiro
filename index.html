@@ -9,7 +9,7 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <!-- CSS -->
-    <link rel="stylesheet" href="style.css?v=4.0">
+    <link rel="stylesheet" href="style.css?v=5.1">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#F0F4F8">
 </head>
@@ -94,6 +94,24 @@
                     <span class="kpi-label">Saldo</span>
                     <strong id="kpi-leftover" class="sensitive-data text-gradient">R$ ••••</strong>
                 </div>
+            </div>
+
+            <!-- POTES DO MÊS -->
+            <div class="bento-item table-bento glass-card potes-bento">
+                <div class="table-bento-header">
+                    <h2><i data-lucide="layout-grid"></i> Potes do mês <span id="potes-periodo" class="potes-periodo"></span></h2>
+                    <div class="potes-acoes">
+                        <button id="import-btn" class="btn btn-outline btn-small"><i data-lucide="file-up"></i> Importar extrato</button>
+                        <button id="add-gasto-btn" class="btn btn-primary btn-small"><i data-lucide="plus"></i> Lançar gasto</button>
+                        <input type="file" id="import-file-input" accept="application/pdf,.pdf" multiple hidden>
+                    </div>
+                </div>
+                <div class="potes-resumo">
+                    <span class="kpi-label">Gasto no ciclo</span>
+                    <strong id="potes-total" class="sensitive-data">R$ ••••</strong>
+                </div>
+                <div id="potes-barra" class="potes-barra"></div>
+                <div id="potes-grid" class="potes-grid"></div>
             </div>
 
             <!-- 2. ENTRADAS (antes era "Roadmap de Entradas") -->
@@ -369,6 +387,74 @@
         </div>
     </div>
 
+    <!-- MODAL: LANÇAR GASTO NUM POTE -->
+    <div id="gasto-modal" class="modal-overlay hidden">
+        <div class="modal-container glass-card modal-small">
+            <div class="modal-header">
+                <h3>Lançar gasto</h3>
+                <button class="icon-btn-small close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <form id="gasto-form" class="modal-body">
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" step="0.01" min="0.01" inputmode="decimal" id="gasto-valor" required>
+                </div>
+                <div class="form-group">
+                    <label>Pote</label>
+                    <div id="gasto-potes" class="potes-chips"></div>
+                    <p id="gasto-pote-erro" class="potes-erro hidden">Escolha um pote.</p>
+                </div>
+                <div class="form-group">
+                    <label>Descrição (opcional)</label>
+                    <input type="text" id="gasto-desc" placeholder="Ex: mercado, 99, café">
+                </div>
+                <div class="form-group">
+                    <label>Data</label>
+                    <input type="date" id="gasto-data" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline close-modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: GASTOS DE UM POTE -->
+    <div id="pote-detalhe-modal" class="modal-overlay hidden">
+        <div class="modal-container glass-card modal-small">
+            <div class="modal-header">
+                <h3 id="pote-detalhe-titulo">Pote</h3>
+                <button class="icon-btn-small close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="pote-detalhe-lista" class="pote-lista"></div>
+                <div class="modal-footer">
+                    <button type="button" id="pote-detalhe-lancar" class="btn btn-primary"><i data-lucide="plus"></i> Lançar neste pote</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: IMPORTAÇÃO DE EXTRATOS -->
+    <div id="import-modal" class="modal-overlay hidden">
+        <div class="modal-container glass-card">
+            <div class="modal-header">
+                <h3>Importar extrato</h3>
+                <button class="icon-btn-small close-modal"><i data-lucide="x"></i></button>
+            </div>
+            <div class="modal-body">
+                <ul id="import-resumo" class="import-resumo"></ul>
+                <p id="import-novos-titulo" class="import-novos-titulo"></p>
+                <div id="import-novos" class="import-novos"></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline close-modal">Cancelar</button>
+                    <button type="button" id="import-salvar" class="btn btn-primary">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL 6: DELETE CONFIRMATION -->
     <div id="delete-confirm-modal" class="modal-overlay hidden">
         <div class="modal-container glass-card modal-small">
@@ -392,6 +478,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 
-    <script src="app.js?v=4.0" defer></script>
+    <script src="app.js?v=5.1" defer></script>
 </body>
 </html>

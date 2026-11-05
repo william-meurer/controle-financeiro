@@ -1046,3 +1046,62 @@ input:focus, select:focus { border-color: var(--teal); background: var(--bg-card
 .toast-success i { color: var(--teal); }
 .toast-error i { color: var(--rose); }
 .toast-info i { color: var(--purple); }
+
+/* ==========================================================================
+   POTES DO MÊS
+   ========================================================================== */
+.potes-periodo { font-size: 0.8rem; color: var(--text-dim); margin-left: 0.25rem; }
+.potes-resumo { display: flex; align-items: baseline; gap: 0.75rem; margin-bottom: 0.75rem; }
+.potes-resumo strong { font-size: 1.1rem; font-weight: 500; color: var(--text-main); }
+.potes-barra { display: flex; gap: 3px; height: 14px; border-radius: 6px; overflow: hidden; margin-bottom: 1.25rem; }
+.potes-barra span { display: block; }
+.potes-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.75rem; }
+.pote-card {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 0.2rem;
+    text-align: left; padding: 1rem 1.1rem; border-radius: var(--radius-md);
+    background: var(--bg-card); border: 1px solid var(--border-glass);
+    color: var(--text-main); font-family: inherit; cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.pote-card:hover { border-color: var(--input-border); transform: translateY(-1px); }
+.pote-topo { display: flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; color: var(--text-muted); }
+.pote-cor { width: 10px; height: 10px; border-radius: 3px; flex: none; display: inline-block; }
+.pote-gasto { font-size: 1.25rem; font-weight: 500; margin-top: 0.35rem; }
+.pote-teto { font-size: 0.78rem; color: var(--text-muted); }
+.pote-progresso { width: 100%; height: 6px; border-radius: 3px; background: var(--input-bg); overflow: hidden; margin: 0.55rem 0 0.35rem; }
+.pote-progresso span { display: block; height: 100%; border-radius: 3px; }
+.pote-resto { font-size: 0.78rem; color: var(--text-muted); }
+.potes-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.pote-chip {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.5rem 0.75rem; border-radius: 999px; font-size: 0.85rem; font-family: inherit;
+    background: var(--input-bg); border: 1px solid var(--input-border); color: var(--text-main); cursor: pointer;
+}
+.pote-chip.ativo { border-color: var(--teal); box-shadow: 0 0 0 2px var(--teal-glow); }
+.potes-erro { color: var(--rose); font-size: 0.8rem; margin-top: 0.4rem; }
+.pote-lista { display: flex; flex-direction: column; max-height: 50vh; overflow-y: auto; }
+.pote-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border-glass); font-size: 0.9rem; }
+.pote-item-data { color: var(--text-dim); font-variant-numeric: tabular-nums; width: 3rem; flex: none; }
+.pote-item-desc { flex: 1; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pote-item strong { font-weight: 500; }
+.pote-vazio { color: var(--text-dim); font-size: 0.9rem; padding: 0.5rem 0 1rem; }
+.pote-topo, .pote-gasto, .pote-teto, .pote-resto { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 600px) {
+    .potes-bento { padding: 1.1rem 1rem; }
+    .potes-bento .table-bento-header { flex-wrap: wrap; gap: 0.75rem; }
+    .potes-resumo { flex-direction: column; gap: 0.15rem; }
+    .potes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
+    .pote-card { padding: 0.8rem 0.75rem; min-width: 0; }
+    .pote-gasto { font-size: 1.05rem; }
+    .pote-topo { font-size: 0.8rem; }
+}
+.potes-acoes { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.import-resumo { list-style: none; padding: 0; margin: 0 0 1rem; display: flex; flex-direction: column; gap: 0.35rem; font-size: 0.9rem; color: var(--text-muted); }
+.import-resumo strong { color: var(--text-main); font-weight: 500; }
+.import-novos-titulo { font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.6rem; }
+.import-novos { display: flex; flex-direction: column; gap: 0.9rem; max-height: 55vh; overflow-y: auto; padding-right: 0.6rem; }
+.import-novo { padding-bottom: 0.9rem; border-bottom: 1px solid var(--border-glass); }
+.import-novo-topo { display: flex; justify-content: space-between; gap: 0.75rem; font-size: 0.88rem; margin-bottom: 0.5rem; }
+.import-novo-topo span { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.import-novo-topo strong { font-weight: 500; white-space: nowrap; }
+.import-novo .pote-chip { padding: 0.35rem 0.6rem; font-size: 0.78rem; }
